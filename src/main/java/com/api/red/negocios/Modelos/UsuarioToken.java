@@ -2,6 +2,8 @@ package com.api.red.negocios.Modelos;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -28,6 +30,7 @@ public class UsuarioToken {
 
     @ManyToOne
     @JoinColumn(name = "usuarioId", nullable = false)
+    @JsonBackReference
     private Usuario usuario;
 
     @Column(name = "token", nullable = false, length = 255)

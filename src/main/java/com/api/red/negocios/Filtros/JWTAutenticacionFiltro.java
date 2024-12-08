@@ -39,8 +39,6 @@ public class JWTAutenticacionFiltro extends GenericFilterBean {
         
         String requestURI = httpRequest.getRequestURI();
         
-        logger.info("Inicia el filtroteeeeeee");
-        
         // Excluir el endpoint /api/login
         if (requestURI.contains("/api/login") || requestURI.contains("/error")) {
             chain.doFilter(request, response);
@@ -48,8 +46,6 @@ public class JWTAutenticacionFiltro extends GenericFilterBean {
         }
 		
 		String header = httpRequest.getHeader("Authorization");
-		
-		logger.info(header);
 
         if (header == null || !header.startsWith("Bearer ")) {
         	
@@ -59,38 +55,23 @@ public class JWTAutenticacionFiltro extends GenericFilterBean {
         }
 
         String token = header.substring(7);
-        
-        logger.info(token);
 
         // Verificar que el token exista 
         UsuarioToken usuarioToken = usuarioTokenRepositorio.findByToken(token).orElse(null);
         
-        logger.info(usuarioToken.getToken());
-        
         // revisamos si el token es valido o sea que no este expirado o que sea habilitado
         if (usuarioToken == null || !usuarioToken.getHabilitado() || 
-                !usuarioToken.getFechaExpiracion().isBefore(java.time.LocalDateTime.now())) {
-        		logger.info("Entra donde no deberia F");
+                usuarioToken.getFechaExpiracion().isBefore(java.time.LocalDateTime.now())) {
         		httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
-        
-        logger.info("previo a usuario token");
         
         Usuario usuario = usuarioToken.getUsuario();
         
         List<Autoridad> autoridades = usuario.getAutoridades(); 
         
         UsernamePasswordAuthenticationToken autenticacion  = new UsernamePasswordAuthenticationToken(usuario, null, autoridades);
-        logger.info("previo a set autentication");
         SecurityContextHolder.getContext().setAuthentication(autenticacion);
-        
-        logger.info("Usuario autenticado: " + autenticacion.getName());
-        logger.info("Class of Principal: " + autenticacion.getPrincipal().getClass().getName());
-		logger.info("Principal: " + autenticacion.getPrincipal());
-		logger.info("Autenticado: " + autenticacion.isAuthenticated());
-		logger.info("Authorities: " + autenticacion.getAuthorities());
-		logger.info("SecurityContext Authentication: " + SecurityContextHolder.getContext().getAuthentication());
 
         
         
