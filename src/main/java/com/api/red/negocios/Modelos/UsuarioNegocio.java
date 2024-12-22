@@ -24,7 +24,7 @@ public class UsuarioNegocio {
 
     @ManyToOne
     @JoinColumn(name = "usuarioId", nullable = false)
-    @JsonBackReference
+    @JsonBackReference("usuario-negocio")
     private Usuario usuario;
 
     @ManyToOne

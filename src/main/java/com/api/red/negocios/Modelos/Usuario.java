@@ -74,15 +74,15 @@ public class Usuario implements UserDetails {
 
     // Relación uno a muchos con autoridades
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JsonManagedReference
+    @JsonManagedReference("autoridad-usuario")
     private List<Autoridad> autoridades;
     
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JsonManagedReference
+    @JsonManagedReference("token-usuario")
     private List<UsuarioToken> tokens;
     
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JsonManagedReference
+    @JsonManagedReference("usuario-negocio")
     private List<UsuarioNegocio> usuarioNegocios;
 
     @Override

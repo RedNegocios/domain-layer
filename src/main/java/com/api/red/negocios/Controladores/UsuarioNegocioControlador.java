@@ -14,14 +14,14 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/usuario-negocio")
-@PreAuthorize("hasAuthority('ROLE_ADMIN')")
+//@PreAuthorize("hasAuthority('ROLE_ADMIN')")
 public class UsuarioNegocioControlador {
 
     @Autowired
     private UsuarioNegocioRepositorio repository;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    //@PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public List<UsuarioNegocio> getAll() {
         return repository.findAll();
     }

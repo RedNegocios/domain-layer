@@ -2,6 +2,8 @@ package com.api.red.negocios.Filtros;
 
 import org.apache.logging.log4j.Logger;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.GenericFilterBean;
@@ -20,6 +22,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class JWTAutenticacionFiltro extends GenericFilterBean {
@@ -38,9 +41,11 @@ public class JWTAutenticacionFiltro extends GenericFilterBean {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         
         String requestURI = httpRequest.getRequestURI();
+        logger.info(requestURI);
         
         // Excluir el endpoint /api/login
-        if (requestURI.contains("/api/login") || requestURI.contains("/error")) {
+        if (requestURI.contains("/api/login") || requestURI.contains("/error") || requestURI.contains("/api/registro")) {
+        	logger.info("al menos bypasa el jwt filter")	;
             chain.doFilter(request, response);
             return;
         }
@@ -68,13 +73,30 @@ public class JWTAutenticacionFiltro extends GenericFilterBean {
         
         Usuario usuario = usuarioToken.getUsuario();
         
-        List<Autoridad> autoridades = usuario.getAutoridades(); 
+        //List<Autoridad> autoridades = usuario.getAutoridades(); 
         
-        UsernamePasswordAuthenticationToken autenticacion  = new UsernamePasswordAuthenticationToken(usuario, null, autoridades);
+        List<SimpleGrantedAuthority> authorities = usuario.getAutoridades().stream()
+        	    .map(autoridad -> new SimpleGrantedAuthority(autoridad.getAuthority()))
+        	    .collect(Collectors.toList());
+        
+        logger.info(authorities.size());
+        
+        UsernamePasswordAuthenticationToken autenticacion  = new UsernamePasswordAuthenticationToken(usuario, null, authorities);
         SecurityContextHolder.getContext().setAuthentication(autenticacion);
 
-        
-        
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication != null) {
+            logger.info("Detalles de la autenticación:");
+            logger.info(" - Principal: {}", authentication.getPrincipal());
+            logger.info(" - Nombre de usuario: {}", authentication.getName());
+            logger.info(" - Credenciales: {}", authentication.getCredentials());
+            logger.info(" - Roles/Autoridades: {}", authentication.getAuthorities());
+            logger.info(" - Detalles adicionales: {}", authentication.getDetails());
+            logger.info(" - ¿Está autenticado?: {}", authentication.isAuthenticated());
+        } else {
+            logger.warn("No hay autenticación configurada en el contexto de seguridad.");
+        }
         
         // eventualmente agregar logica para usar jwt info por ahora solo tokencito y yapopapo
 

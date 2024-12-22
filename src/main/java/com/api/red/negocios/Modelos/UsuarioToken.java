@@ -30,7 +30,7 @@ public class UsuarioToken {
 
     @ManyToOne
     @JoinColumn(name = "usuarioId", nullable = false)
-    @JsonBackReference
+    @JsonBackReference("token-usuario")
     private Usuario usuario;
 
     @Column(name = "token", nullable = false, length = 255)
