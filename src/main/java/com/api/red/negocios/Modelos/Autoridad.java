@@ -17,6 +17,7 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Table(name = "Autoridad")
@@ -35,10 +36,11 @@ public class Autoridad implements GrantedAuthority{
     @Column(name = "autoridadId")
     private Integer autoridadId;
 
-    @ManyToOne
-    @JoinColumn(name = "usuarioId", nullable = false)
-    @JsonBackReference
-    private Usuario usuario;
+	@ManyToOne
+	@JoinColumn(name = "usuarioId", nullable = false)
+	@JsonBackReference("autoridad-usuario")
+	@ToString.Exclude // Evita referencias cíclicas en toString()
+	private Usuario usuario;
 
     @Column(name = "autoridad", nullable = false, length = 50)
     private String autoridad;

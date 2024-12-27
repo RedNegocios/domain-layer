@@ -2,6 +2,8 @@ package com.api.red.negocios.Filtros;
 
 import org.apache.logging.log4j.Logger;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.GenericFilterBean;
@@ -20,6 +22,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class JWTAutenticacionFiltro extends GenericFilterBean {
@@ -38,18 +41,16 @@ public class JWTAutenticacionFiltro extends GenericFilterBean {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         
         String requestURI = httpRequest.getRequestURI();
-        
-        logger.info("Inicia el filtroteeeeeee");
+        logger.info(requestURI);
         
         // Excluir el endpoint /api/login
-        if (requestURI.contains("/api/login") || requestURI.contains("/error")) {
+        if (requestURI.contains("/api/login") || requestURI.contains("/error") || requestURI.contains("/api/registro")) {
+        	logger.info("al menos bypasa el jwt filter")	;
             chain.doFilter(request, response);
             return;
         }
 		
 		String header = httpRequest.getHeader("Authorization");
-		
-		logger.info(header);
 
         if (header == null || !header.startsWith("Bearer ")) {
         	
@@ -59,41 +60,43 @@ public class JWTAutenticacionFiltro extends GenericFilterBean {
         }
 
         String token = header.substring(7);
-        
-        logger.info(token);
 
         // Verificar que el token exista 
         UsuarioToken usuarioToken = usuarioTokenRepositorio.findByToken(token).orElse(null);
         
-        logger.info(usuarioToken.getToken());
-        
         // revisamos si el token es valido o sea que no este expirado o que sea habilitado
         if (usuarioToken == null || !usuarioToken.getHabilitado() || 
-                !usuarioToken.getFechaExpiracion().isBefore(java.time.LocalDateTime.now())) {
-        		logger.info("Entra donde no deberia F");
+                usuarioToken.getFechaExpiracion().isBefore(java.time.LocalDateTime.now())) {
         		httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
         
-        logger.info("previo a usuario token");
-        
         Usuario usuario = usuarioToken.getUsuario();
         
-        List<Autoridad> autoridades = usuario.getAutoridades(); 
+        //List<Autoridad> autoridades = usuario.getAutoridades(); 
         
-        UsernamePasswordAuthenticationToken autenticacion  = new UsernamePasswordAuthenticationToken(usuario, null, autoridades);
-        logger.info("previo a set autentication");
+        List<SimpleGrantedAuthority> authorities = usuario.getAutoridades().stream()
+        	    .map(autoridad -> new SimpleGrantedAuthority(autoridad.getAuthority()))
+        	    .collect(Collectors.toList());
+        
+        logger.info(authorities.size());
+        
+        UsernamePasswordAuthenticationToken autenticacion  = new UsernamePasswordAuthenticationToken(usuario, null, authorities);
         SecurityContextHolder.getContext().setAuthentication(autenticacion);
-        
-        logger.info("Usuario autenticado: " + autenticacion.getName());
-        logger.info("Class of Principal: " + autenticacion.getPrincipal().getClass().getName());
-		logger.info("Principal: " + autenticacion.getPrincipal());
-		logger.info("Autenticado: " + autenticacion.isAuthenticated());
-		logger.info("Authorities: " + autenticacion.getAuthorities());
-		logger.info("SecurityContext Authentication: " + SecurityContextHolder.getContext().getAuthentication());
 
-        
-        
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication != null) {
+            logger.info("Detalles de la autenticación:");
+            logger.info(" - Principal: {}", authentication.getPrincipal());
+            logger.info(" - Nombre de usuario: {}", authentication.getName());
+            logger.info(" - Credenciales: {}", authentication.getCredentials());
+            logger.info(" - Roles/Autoridades: {}", authentication.getAuthorities());
+            logger.info(" - Detalles adicionales: {}", authentication.getDetails());
+            logger.info(" - ¿Está autenticado?: {}", authentication.isAuthenticated());
+        } else {
+            logger.warn("No hay autenticación configurada en el contexto de seguridad.");
+        }
         
         // eventualmente agregar logica para usar jwt info por ahora solo tokencito y yapopapo
 

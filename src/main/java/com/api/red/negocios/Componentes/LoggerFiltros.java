@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
 
-@Component
+//@Component
 public class LoggerFiltros {
 
     private final FilterChainProxy filterChainProxy;

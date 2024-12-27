@@ -21,7 +21,7 @@ public class UsuarioControlador {
     private UsuarioServicio usuarioService;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+//    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public List<Usuario> getAllUsuarios() {
         return usuarioService.findAllUsuarios();
     }
