@@ -46,5 +46,5 @@ public class UsuarioNegocio {
 
     private LocalDateTime fechaEliminacion;
     
-    private Integer statusId;
+    private Integer estatusId;
 }

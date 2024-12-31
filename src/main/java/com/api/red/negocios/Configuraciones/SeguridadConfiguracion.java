@@ -1,5 +1,7 @@
 package com.api.red.negocios.Configuraciones;
 
+import java.util.List;
+
 import javax.crypto.SecretKey;
 
 import org.apache.logging.log4j.Logger;
@@ -13,6 +15,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
+import org.springframework.web.cors.CorsConfiguration;
 
 import io.jsonwebtoken.security.Keys;
 import lombok.Getter;
@@ -37,10 +40,20 @@ public class SeguridadConfiguracion {
 
         http
             .csrf(csrf -> csrf.disable()) // Desactiva CSRF (para APIs REST, es común desactivarlo)
+            .cors(cors -> cors.configurationSource(request -> {
+                CorsConfiguration config = new CorsConfiguration();
+                config.setAllowedOrigins(List.of("http://localhost:3000")); // Permitir solicitudes desde React
+                config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Métodos permitidos
+                config.setAllowedHeaders(List.of("*")); // Permitir todos los encabezados
+                config.setAllowCredentials(true); // Permitir credenciales (opcional)
+                return config;
+            }))
             .authorizeHttpRequests(auth -> auth
-            		.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+            		//.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+            		//.requestMatchers(HttpMethod.OPTIONS, "/negocios/api/**").permitAll()
                 .requestMatchers("/api/registro/**").permitAll() // Permitir acceso público
                 .requestMatchers("/api/login/**").permitAll()    // Permitir acceso público
+                //.requestMatchers("/api/negocios/**").permitAll()
                 .anyRequest().permitAll()                   // Requiere rol "USER" para todo lo demás
             )
             .addFilterBefore(jwtAutenticacionFiltro, SecurityContextHolderFilter.class) // Filtro JWT antes del contexto de seguridad
