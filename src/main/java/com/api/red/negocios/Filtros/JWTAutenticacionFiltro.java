@@ -43,6 +43,14 @@ public class JWTAutenticacionFiltro extends GenericFilterBean {
         String requestURI = httpRequest.getRequestURI();
         logger.info(requestURI);
         
+        String method = httpRequest.getMethod();
+        
+        if ("OPTIONS".equalsIgnoreCase(method)) {
+        	logger.info("al menos bypasa el jwt filter")	;
+            chain.doFilter(request, response);
+            return;
+        }
+        
         // Excluir el endpoint /api/login
         if (requestURI.contains("/api/login") || requestURI.contains("/error") || requestURI.contains("/api/registro")) {
         	logger.info("al menos bypasa el jwt filter")	;
@@ -51,6 +59,8 @@ public class JWTAutenticacionFiltro extends GenericFilterBean {
         }
 		
 		String header = httpRequest.getHeader("Authorization");
+		
+		logger.info(header);
 
         if (header == null || !header.startsWith("Bearer ")) {
         	
@@ -73,6 +83,8 @@ public class JWTAutenticacionFiltro extends GenericFilterBean {
         
         Usuario usuario = usuarioToken.getUsuario();
         
+        logger.info(usuario == null);
+        
         //List<Autoridad> autoridades = usuario.getAutoridades(); 
         
         List<SimpleGrantedAuthority> authorities = usuario.getAutoridades().stream()
@@ -88,7 +100,9 @@ public class JWTAutenticacionFiltro extends GenericFilterBean {
 
         if (authentication != null) {
             logger.info("Detalles de la autenticación:");
-            logger.info(" - Principal: {}", authentication.getPrincipal());
+            logger.info(" - Principal: {}", authentication.getPrincipal() instanceof Usuario 
+            	    ? ((Usuario) authentication.getPrincipal()).getUsername()
+            	    : authentication.getPrincipal());
             logger.info(" - Nombre de usuario: {}", authentication.getName());
             logger.info(" - Credenciales: {}", authentication.getCredentials());
             logger.info(" - Roles/Autoridades: {}", authentication.getAuthorities());

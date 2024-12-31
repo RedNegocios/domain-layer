@@ -28,6 +28,7 @@ public class NegocioControlador {
     @GetMapping
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public List<Negocio> getAllNegocios() {
+    	logger.info("al menos se ejecuta el metodo loledkorfifoiuerhbfgl;iserbg");
     	// Obtener el objeto de autenticación
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 

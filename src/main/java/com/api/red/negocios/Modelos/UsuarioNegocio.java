@@ -45,4 +45,6 @@ public class UsuarioNegocio {
     private String eliminadoPor;
 
     private LocalDateTime fechaEliminacion;
+    
+    private Integer estatusId;
 }
