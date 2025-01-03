@@ -23,12 +23,12 @@ public class UsuarioNegocio {
     private Integer usuarioNegocioId;
 
     @ManyToOne
-    @JoinColumn(name = "usuarioId", nullable = false)
+    @JoinColumn(name = "usuarioId")
     @JsonBackReference("usuario-negocio")
     private Usuario usuario;
 
     @ManyToOne
-    @JoinColumn(name = "negocioId", nullable = false)
+    @JoinColumn(name = "negocioId")
     @JsonBackReference
     private Negocio negocio;
 

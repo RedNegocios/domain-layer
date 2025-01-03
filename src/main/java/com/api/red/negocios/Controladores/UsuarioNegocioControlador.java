@@ -3,10 +3,16 @@ package com.api.red.negocios.Controladores;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import com.api.red.negocios.Modelos.Negocio;
+import com.api.red.negocios.Modelos.Usuario;
 import com.api.red.negocios.Modelos.UsuarioNegocio;
+import com.api.red.negocios.Repositorios.NegocioRepositorio;
 import com.api.red.negocios.Repositorios.UsuarioNegocioRepositorio;
+import com.api.red.negocios.Repositorios.UsuarioRepositorio;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,14 +20,19 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/usuario-negocio")
-//@PreAuthorize("hasAuthority('ROLE_ADMIN')")
+@PreAuthorize("hasAuthority('ROLE_USER')")
 public class UsuarioNegocioControlador {
 
     @Autowired
     private UsuarioNegocioRepositorio repository;
+    
+    @Autowired
+    private NegocioRepositorio negocioRepositorio;
+    
+    @Autowired
+    private UsuarioRepositorio usuarioRepositorio;
 
     @GetMapping
-    //@PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public List<UsuarioNegocio> getAll() {
         return repository.findAll();
     }
@@ -35,8 +46,43 @@ public class UsuarioNegocioControlador {
 
     @PostMapping
     public UsuarioNegocio create(@RequestBody UsuarioNegocio usuarioNegocio) {
-        usuarioNegocio.setFechaCreacion(LocalDateTime.now());
-        return repository.save(usuarioNegocio);
+        try {
+            // Verificar que el negocio no sea nulo
+            if (usuarioNegocio.getNegocio() == null || usuarioNegocio.getNegocio().getNegocioId() == null) {
+                throw new IllegalArgumentException("El negocio no puede ser nulo");
+            }
+
+            // Buscar negocio en el repositorio
+            Negocio negocio = negocioRepositorio.findById(usuarioNegocio.getNegocio().getNegocioId())
+                    .orElseThrow(() -> new IllegalArgumentException("Negocio no encontrado"));
+
+            // Obtener usuario autenticado
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                throw new IllegalArgumentException("Usuario no autenticado");
+            }
+
+            String username = authentication.getName();
+
+            Usuario usuario = usuarioRepositorio.findByUsername(username);
+            if (usuario == null) {
+                throw new IllegalArgumentException("Usuario no encontrado");
+            }
+
+            // Asignar usuario y negocio a la entidad UsuarioNegocio
+            usuarioNegocio.setUsuario(usuario);
+            usuarioNegocio.setNegocio(negocio);
+            usuarioNegocio.setFechaCreacion(LocalDateTime.now());
+            usuarioNegocio.setEstatusId(1);
+
+            // Guardar la entidad y devolverla
+            return repository.save(usuarioNegocio);
+
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw e;
+        }
     }
 
     @PutMapping("/{id}")
