@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import com.api.red.negocios.Modelos.LoginRequest;
 import com.api.red.negocios.Modelos.LoginResponse;
 import com.api.red.negocios.Modelos.Usuario;
+import com.api.red.negocios.Modelos.Autoridad;
 import com.api.red.negocios.Modelos.UsuarioToken;
 import com.api.red.negocios.Repositorios.UsuarioRepositorio;
 import com.api.red.negocios.Repositorios.UsuarioTokenRepositorio;
@@ -18,6 +19,7 @@ import com.api.red.negocios.Repositorios.UsuarioTokenRepositorio;
 
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/login")
@@ -39,7 +41,9 @@ public class LoginControlador {
     @PostMapping
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         Usuario usuario = usuarioRepositorio.findByUsername(loginRequest.getUsername());
-
+        
+        List<Autoridad> autoridades = usuario.getAutoridades();
+        
     	logger.info(passwordEncoder.matches(loginRequest.getPassword(), usuario.getPassword()));
         
     	
@@ -57,6 +61,6 @@ public class LoginControlador {
         usuarioToken.setHabilitado(true);
         usuarioTokenRepositorio.save(usuarioToken);
 
-        return ResponseEntity.ok(new LoginResponse(token, usuario.getUsername()));
+        return ResponseEntity.ok(new LoginResponse(token, usuario.getUsername(), autoridades));
     }
 }
