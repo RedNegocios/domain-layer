@@ -20,7 +20,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/usuario-negocio")
-@PreAuthorize("hasAuthority('ROLE_USER')")
+@PreAuthorize("hasAuthority('ROLE_ADMIN_NEGOCIO') or hasAuthority('ROLE_USER')")
 public class UsuarioNegocioControlador {
 
     @Autowired

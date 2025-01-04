@@ -10,10 +10,17 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import com.api.red.negocios.DTO.NegocioUsuariosDTO;
+import com.api.red.negocios.DTO.UsuarioDTO;
 import com.api.red.negocios.Modelos.Negocio;
+import com.api.red.negocios.Modelos.Usuario;
+import com.api.red.negocios.Modelos.UsuarioNegocio;
 import com.api.red.negocios.Repositorios.NegocioRepositorio;
+import com.api.red.negocios.Repositorios.UsuarioNegocioRepositorio;
+import com.api.red.negocios.Repositorios.UsuarioRepositorio;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -24,6 +31,12 @@ public class NegocioControlador {
 	private static final Logger logger = org.apache.logging.log4j.LogManager.getLogger();
     @Autowired
     private NegocioRepositorio negocioRepositorio;
+
+    @Autowired
+    private UsuarioNegocioRepositorio usuarioNegocioRepositorio;
+
+    @Autowired
+    private UsuarioRepositorio usuarioRepositorio;
 
     @GetMapping
     @PreAuthorize("hasAuthority('ROLE_USER')")
@@ -91,4 +104,65 @@ public class NegocioControlador {
         negocioRepositorio.save(negocio);
         return ResponseEntity.noContent().build();
     }
+    
+ // Nuevo endpoint para admin negocio agregar mas logica porque debe de traer de cada uno debe eligir cual manejar y debe aceptar o rechazar las solicitudes  more todo
+    @GetMapping("/admin")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN_NEGOCIO')")
+    public List<NegocioUsuariosDTO> getNegociosConUsuariosPendientes() {
+        logger.info("Método getNegociosConUsuariosPendientes ejecutado por ROLE_ADMIN_NEGOCIO");
+
+        // Obtener el usuario autenticado
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            logger.error("Usuario no autenticado");
+            throw new IllegalArgumentException("Usuario no autenticado");
+        }
+
+        String username = authentication.getName();
+        Usuario usuario = usuarioRepositorio.findByUsername(username);
+        if (usuario == null) {
+            logger.error("Usuario no encontrado: {}", username);
+            throw new IllegalArgumentException("Usuario no encontrado");
+        }
+
+        // Obtener los registros de UsuarioNegocio asociados al usuario
+        List<UsuarioNegocio> usuarioNegocios = usuario.getUsuarioNegocios();
+        logger.info("UsuarioNegocios para el usuario {}: {}", username, usuarioNegocios);
+
+        // Extraer los negocios asociados
+        List<Negocio> negociosAsociados = usuarioNegocios.stream()
+                .map(UsuarioNegocio::getNegocio)
+                .distinct()
+                .collect(Collectors.toList());
+        logger.info("Negocios asociados al usuario {}: {}", username, negociosAsociados);
+
+        // Crear una lista para agrupar la respuesta
+        List<NegocioUsuariosDTO> resultado = new ArrayList<>();
+
+        for (Negocio negocio : negociosAsociados) {
+        	logger.info("Negocios asociados {}", negociosAsociados);
+            // Obtener los registros pendientes (estatusId = 1) para cada negocio
+            List<UsuarioNegocio> pendientes = usuarioNegocioRepositorio.findByNegocioAndEstatusId(negocio, 1);
+
+            // Transformar a DTO de usuarios
+            List<UsuarioDTO> usuariosDTO = pendientes.stream()
+                    .map(usuarioNegocio -> new UsuarioDTO(
+                            usuarioNegocio.getUsuario().getUsername(),
+                            usuarioNegocio.getUsuario().getEmail(),
+                            usuarioNegocio.getUsuarioNegocioId()
+                    ))
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            // Agregar solo si hay usuarios pendientes
+            if (!usuariosDTO.isEmpty()) {
+                resultado.add(new NegocioUsuariosDTO(negocio.getNombre(), usuariosDTO));
+            }
+        }
+
+        logger.info("Negocios con usuarios pendientes: {}", resultado);
+        return resultado;
+    }
+
+
 }
