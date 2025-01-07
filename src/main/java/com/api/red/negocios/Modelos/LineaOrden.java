@@ -5,6 +5,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -25,6 +27,7 @@ public class LineaOrden {
 
     @ManyToOne
     @JoinColumn(name = "ordenId", nullable = false) // Configuración de la clave foránea con Orden
+    @JsonBackReference
     private Orden orden;
 
     @ManyToOne
