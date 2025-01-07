@@ -9,10 +9,12 @@ import org.springframework.web.bind.annotation.*;
 
 import com.api.red.negocios.Modelos.Negocio;
 import com.api.red.negocios.Modelos.NegocioProducto;
+import com.api.red.negocios.Modelos.Producto;
 import com.api.red.negocios.Modelos.Usuario;
 import com.api.red.negocios.Modelos.UsuarioNegocio;
 import com.api.red.negocios.Repositorios.NegocioProductoRepositorio;
 import com.api.red.negocios.Repositorios.NegocioRepositorio;
+import com.api.red.negocios.Repositorios.ProductoRepositorio;
 import com.api.red.negocios.Repositorios.UsuarioNegocioRepositorio;
 import com.api.red.negocios.Repositorios.UsuarioRepositorio;
 
@@ -31,6 +33,8 @@ public class NegocioProductoControlador {
     private UsuarioRepositorio usuarioRepositorio;
     @Autowired
     private NegocioRepositorio negocioRepositorio;
+    @Autowired
+    private ProductoRepositorio productoRepositorio;
 
     // Obtener todos los registros de negocio-producto
     @GetMapping
@@ -50,24 +54,23 @@ public class NegocioProductoControlador {
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_ADMIN_NEGOCIO')")
     public NegocioProducto crear(@RequestBody NegocioProducto negocioProducto) {
-        // Obtener el usuario autenticado
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-
-        // Obtener el usuario
-        Usuario usuario = usuarioRepositorio.findByUsername(username);
-        if (usuario == null) {
-            throw new IllegalArgumentException("Usuario no encontrado");
+        // Validar que el negocio y producto no sean nulos
+        if (negocioProducto.getNegocio() == null || negocioProducto.getProducto() == null) {
+            throw new IllegalArgumentException("Negocio y Producto no pueden ser nulos");
         }
 
-        // Verificar si el usuario está asociado a un negocio
-        List<UsuarioNegocio> usuarioNegocios = usuarioNegocioRepositorio.findByUsuario(usuario);
-        if (usuarioNegocios.isEmpty()) {
-            throw new IllegalArgumentException("El usuario no está asociado a ningún negocio");
-        }
+        // Buscar el negocio por ID
+        Negocio negocio = negocioRepositorio.findById(negocioProducto.getNegocio().getNegocioId())
+                .orElseThrow(() -> new IllegalArgumentException("Negocio no encontrado"));
 
-        // Asociar el primer negocio del usuario (puedes ajustar según la lógica)
-        negocioProducto.setNegocio(usuarioNegocios.get(0).getNegocio());
+        // Buscar el producto por ID
+        Producto producto = productoRepositorio.findById(negocioProducto.getProducto().getProductoId())
+                .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado"));
+
+        // Asociar el negocio y producto al nuevo registro
+        negocioProducto.setNegocio(negocio);
+        negocioProducto.setProducto(producto);
+        negocioProducto.setPrecioDeVenta(negocioProducto.getPrecioDeVenta());
 
         return negocioProductoRepositorio.save(negocioProducto);
     }
