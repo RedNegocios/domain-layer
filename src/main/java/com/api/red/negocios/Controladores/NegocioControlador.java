@@ -164,5 +164,38 @@ public class NegocioControlador {
         return resultado;
     }
 
+    @GetMapping("/admin-negocios")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN_NEGOCIO')")
+    public List<Negocio> getNegociosDeAdmin() {
+        logger.info("Método getNegociosConUsuariosPendientes ejecutado por ROLE_ADMIN_NEGOCIO");
+
+        // Obtener el usuario autenticado
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            logger.error("Usuario no autenticado");
+            throw new IllegalArgumentException("Usuario no autenticado");
+        }
+
+        String username = authentication.getName();
+        Usuario usuario = usuarioRepositorio.findByUsername(username);
+        if (usuario == null) {
+            logger.error("Usuario no encontrado: {}", username);
+            throw new IllegalArgumentException("Usuario no encontrado");
+        }
+
+        // Obtener los registros de UsuarioNegocio asociados al usuario
+        List<UsuarioNegocio> usuarioNegocios = usuario.getUsuarioNegocios();
+        logger.info("UsuarioNegocios para el usuario {}: {}", username, usuarioNegocios);
+
+        // Extraer los negocios asociados
+        List<Negocio> negociosAsociados = usuarioNegocios.stream()
+                .map(UsuarioNegocio::getNegocio)
+                .distinct()
+                .collect(Collectors.toList());
+        logger.info("Negocios asociados al usuario {}: {}", username, negociosAsociados);
+
+        
+        return negociosAsociados;
+    }
 
 }

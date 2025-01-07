@@ -11,5 +11,11 @@ import com.api.red.negocios.Modelos.UsuarioNegocio;
 
 @Repository
 public interface UsuarioNegocioRepositorio extends JpaRepository<UsuarioNegocio, Integer> {
-	List<UsuarioNegocio> findByNegocioAndEstatusId(Negocio negocio, Integer id);
+
+    // Encontrar registros por negocio y estatus
+    List<UsuarioNegocio> findByNegocioAndEstatusId(Negocio negocio, Integer estatusId);
+
+    // Encontrar registros por usuario
+    List<UsuarioNegocio> findByUsuario(Usuario usuario);
 }
+

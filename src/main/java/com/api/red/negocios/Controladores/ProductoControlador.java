@@ -2,6 +2,7 @@ package com.api.red.negocios.Controladores;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.api.red.negocios.Modelos.Producto;
@@ -34,8 +35,11 @@ public class ProductoControlador {
     // Crear un nuevo producto
     @PostMapping
     public Producto crearProducto(@RequestBody Producto producto) {
+    	producto.setFechaCreacion(LocalDateTime.now());
+        producto.setActivo(true);
         return productoRepositorio.save(producto);
     }
+
 
     // Actualizar un producto
     @PutMapping("/{id}")
