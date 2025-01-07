@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "Negocio")
@@ -42,6 +43,9 @@ public class Negocio {
 
     @Column(name = "fechaEliminacion")
     private LocalDateTime fechaEliminacion;
+    
+    @OneToMany(mappedBy = "negocio", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UsuarioNegocio> usuarioNegocios;
 }
 
 

@@ -1,6 +1,7 @@
 package com.api.red.negocios.Controladores;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -9,11 +10,13 @@ import org.springframework.web.bind.annotation.*;
 
 import com.api.red.negocios.Modelos.Negocio;
 import com.api.red.negocios.Modelos.NegocioProducto;
+import com.api.red.negocios.Modelos.Orden;
 import com.api.red.negocios.Modelos.Producto;
 import com.api.red.negocios.Modelos.Usuario;
 import com.api.red.negocios.Modelos.UsuarioNegocio;
 import com.api.red.negocios.Repositorios.NegocioProductoRepositorio;
 import com.api.red.negocios.Repositorios.NegocioRepositorio;
+import com.api.red.negocios.Repositorios.OrdenRepositorio;
 import com.api.red.negocios.Repositorios.ProductoRepositorio;
 import com.api.red.negocios.Repositorios.UsuarioNegocioRepositorio;
 import com.api.red.negocios.Repositorios.UsuarioRepositorio;
@@ -35,6 +38,8 @@ public class NegocioProductoControlador {
     private NegocioRepositorio negocioRepositorio;
     @Autowired
     private ProductoRepositorio productoRepositorio;
+    @Autowired
+    private OrdenRepositorio ordenRepositorio;
 
     // Obtener todos los registros de negocio-producto
     @GetMapping
@@ -76,7 +81,7 @@ public class NegocioProductoControlador {
     }
     
     @GetMapping("/productos-por-negocio/{negocioId}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN_NEGOCIO')")
+    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN_NEGOCIO')")
     public ResponseEntity<List<NegocioProducto>> obtenerProductosPorNegocio(@PathVariable Integer negocioId) {
         Optional<Negocio> negocio = negocioRepositorio.findById(negocioId);
         if (negocio.isEmpty()) {
@@ -98,6 +103,7 @@ public class NegocioProductoControlador {
             return ResponseEntity.ok(negocioProductoRepositorio.save(negocioProducto));
         }).orElse(ResponseEntity.notFound().build());
     }
+
 
     // Eliminar un registro de negocio-producto (eliminación física)
     @DeleteMapping("/{id}")

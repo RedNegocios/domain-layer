@@ -5,6 +5,9 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.*;
 
@@ -16,10 +19,18 @@ public class Orden {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer ordenId;
+    
+    @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonManagedReference
+    private List<LineaOrden> lineasOrden;
 
     @ManyToOne
-    @JoinColumn(name = "negocioId", nullable = false) // Configuración de la clave foránea
+    @JoinColumn(name = "negocioId", nullable = false) // Configuración de la clave foránea con Negocio
     private Negocio negocio;
+
+    @ManyToOne
+    @JoinColumn(name = "usuarioId", nullable = false) // Configuración de la clave foránea con Usuario
+    private Usuario usuario;
 
     @Column(nullable = false, length = 50)
     private String numeroOrden;
@@ -31,7 +42,7 @@ public class Orden {
     private BigDecimal montoTotal;
 
     @Column(nullable = false, length = 50)
-    private String estado; // Ejemplo: 'Pendiente', 'Completada'
+    private String estado = "Pendiente"; // Ejemplo: 'Pendiente', 'Completada'
 
     @Column(updatable = false)
     private LocalDateTime fechaCreacion = LocalDateTime.now();
