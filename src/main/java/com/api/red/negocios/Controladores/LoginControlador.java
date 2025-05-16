@@ -61,6 +61,6 @@ public class LoginControlador {
         usuarioToken.setHabilitado(true);
         usuarioTokenRepositorio.save(usuarioToken);
 
-        return ResponseEntity.ok(new LoginResponse(token, usuario.getUsername(), autoridades));
+        return ResponseEntity.ok(new LoginResponse(token, usuario.getUsername(), autoridades, usuario.getUsuarioId()));
     }
 }
