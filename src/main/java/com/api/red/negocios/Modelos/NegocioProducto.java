@@ -19,18 +19,23 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "NegocioProducto")
 public class NegocioProducto {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer negocioProductoId;
 
     @ManyToOne
-    @JoinColumn(name = "negocioId", nullable = false) // Configuración de la clave foránea a la tabla Negocio
+    @JoinColumn(name = "negocioId", nullable = false)
     private Negocio negocio;
 
     @ManyToOne
-    @JoinColumn(name = "productoId", nullable = false) // Configuración de la clave foránea a la tabla Producto
+    @JoinColumn(name = "productoId", nullable = false)
     private Producto producto;
 
     @Column(nullable = false)
     private BigDecimal precioDeVenta;
+
+    @Column(nullable = false)
+    private boolean visualizacionProducto;
 }
+

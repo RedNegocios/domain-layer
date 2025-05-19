@@ -87,9 +87,14 @@ public class NegocioProductoControlador {
         if (negocio.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-
+        
         // Filtrar productos asociados al negocio específico
         List<NegocioProducto> productos = negocioProductoRepositorio.findByNegocio(negocio.get());
+        
+        // TO-DO Tenemos que implementar el siguiente algoritmo:
+        //     1. itera sobre todos los productos y crea una nueva lista de productos que tenga solo los productos con visualizacionProducto = 1
+        //     2. solo regresamos la lista nueva y terminamos.
+        
         return ResponseEntity.ok(productos);
     }    
 
