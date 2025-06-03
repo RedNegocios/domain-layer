@@ -87,11 +87,28 @@ public class NegocioProductoControlador {
         if (negocio.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-
+        
         // Filtrar productos asociados al negocio específico
-        List<NegocioProducto> productos = negocioProductoRepositorio.findByNegocio(negocio.get());
+        //List<NegocioProducto> productos = negocioProductoRepositorio.findByNegocio(negocio.get());
+        
+        List<NegocioProducto> productos = negocioProductoRepositorio.findVisibleByNegocio(negocio.get());
+        
         return ResponseEntity.ok(productos);
     }    
+    
+    @GetMapping("/productos-por-negocio-completos/{negocioId}")
+    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN_NEGOCIO')")
+    public ResponseEntity<List<NegocioProducto>> obtenerProductosPorNegocioCompleto(@PathVariable Integer negocioId) {
+        Optional<Negocio> negocio = negocioRepositorio.findById(negocioId);
+        if (negocio.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        // Filtrar productos asociados al negocio específico
+        List<NegocioProducto> productos = negocioProductoRepositorio.findByNegocio(negocio.get());
+        
+        return ResponseEntity.ok(productos);
+    } 
 
     // Actualizar un registro de negocio-producto
     @PutMapping("/{id}")
@@ -100,9 +117,11 @@ public class NegocioProductoControlador {
             negocioProducto.setNegocio(negocioProductoActualizado.getNegocio());
             negocioProducto.setProducto(negocioProductoActualizado.getProducto());
             negocioProducto.setPrecioDeVenta(negocioProductoActualizado.getPrecioDeVenta());
+            negocioProducto.setVisualizacionProducto(negocioProductoActualizado.isVisualizacionProducto()); // 💥 ESTA LÍNEA ES CLAVE
             return ResponseEntity.ok(negocioProductoRepositorio.save(negocioProducto));
         }).orElse(ResponseEntity.notFound().build());
     }
+
 
 
     // Eliminar un registro de negocio-producto (eliminación física)
