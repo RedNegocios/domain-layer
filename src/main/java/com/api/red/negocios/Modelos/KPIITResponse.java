@@ -1,12 +1,12 @@
 package com.api.red.negocios.Modelos;
 
+import java.math.BigDecimal;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class KPIGNRequest {
-    private String token;
-
-	private Long negocioId;
+public class KPIITResponse {
+    private BigDecimal ingresosTotales;
 }
