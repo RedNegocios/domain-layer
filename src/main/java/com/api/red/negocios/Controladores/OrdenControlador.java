@@ -104,25 +104,34 @@ public class OrdenControlador {
         Orden nuevaOrden = new Orden();
         nuevaOrden.setNegocio(negocio);
         nuevaOrden.setUsuario(usuario);
-        nuevaOrden.setNumeroOrden(UUID.randomUUID().toString()); // Generar un número único para la orden
+        nuevaOrden.setNumeroOrden(UUID.randomUUID().toString());
         nuevaOrden.setFechaOrden(LocalDateTime.now());
         nuevaOrden.setMontoTotal(ordenDTO.getMontoTotal());
         nuevaOrden.setEstado("Pendiente");
 
         Orden ordenGuardada = ordenRepositorio.save(nuevaOrden);
 
-        // Guardar las líneas de la orden
+        // Guardar las líneas de la orden con campos de gobernanza
         for (LineaOrdenDTO linea : ordenDTO.getLineasOrden()) {
             LineaOrden nuevaLinea = new LineaOrden();
             nuevaLinea.setOrden(ordenGuardada);
             nuevaLinea.setNegocioProducto(linea.getNegocioProducto());
             nuevaLinea.setCantidad(linea.getCantidad());
             nuevaLinea.setPrecioUnitario(linea.getPrecioUnitario());
+
+            // Campos de gobernanza
+            nuevaLinea.setFechaRegistro(LocalDateTime.now());
+            nuevaLinea.setCreadoPor(username);
+            nuevaLinea.setFechaCreacion(LocalDateTime.now());
+            nuevaLinea.setModificadoPor(username);
+            nuevaLinea.setFechaModificacion(LocalDateTime.now());
+
             lineaOrdenRepositorio.save(nuevaLinea);
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ordenGuardada);
     }
+
 
 
     // Actualizar una orden

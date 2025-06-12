@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
@@ -21,17 +22,18 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "LineaOrden")
 public class LineaOrden {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer lineaOrdenId;
 
     @ManyToOne
-    @JoinColumn(name = "ordenId", nullable = false) // Configuración de la clave foránea con Orden
+    @JoinColumn(name = "ordenId", nullable = false)
     @JsonBackReference
     private Orden orden;
 
     @ManyToOne
-    @JoinColumn(name = "negocioProductoId", nullable = false) // Configuración de la clave foránea con NegocioProducto
+    @JoinColumn(name = "negocioProductoId", nullable = false)
     private NegocioProducto negocioProducto;
 
     @Column(nullable = false)
@@ -39,4 +41,22 @@ public class LineaOrden {
 
     @Column(nullable = false)
     private BigDecimal precioUnitario;
+
+    // Timestamp y gobernanza
+
+    @Column(name = "fechaRegistro", columnDefinition = "DATETIME", nullable = false)
+    private LocalDateTime fechaRegistro;
+
+    @Column(name = "creadoPor", length = 100)
+    private String creadoPor;
+
+    @Column(name = "fechaCreacion", columnDefinition = "DATETIME")
+    private LocalDateTime fechaCreacion;
+
+    @Column(name = "modificadoPor", length = 100)
+    private String modificadoPor;
+
+    @Column(name = "fechaModificacion", columnDefinition = "DATETIME")
+    private LocalDateTime fechaModificacion;
 }
+
