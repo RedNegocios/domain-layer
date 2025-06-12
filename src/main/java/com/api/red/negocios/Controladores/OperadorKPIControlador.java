@@ -1,6 +1,8 @@
 package com.api.red.negocios.Controladores;
 
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,8 +14,10 @@ import com.api.red.negocios.Modelos.KPIGNResponse;
 import com.api.red.negocios.Modelos.KPIGlobal;
 import com.api.red.negocios.Modelos.KPIITResponse;
 import com.api.red.negocios.Modelos.KPIResponse;
+import com.api.red.negocios.Modelos.KPITP;
 import com.api.red.negocios.Servicios.KPIGNServicio;
 import com.api.red.negocios.Servicios.KPIITServicio;
+import com.api.red.negocios.Servicios.KPITPServicio;
 
 @RestController
 @RequestMapping("/api/kpi")
@@ -24,6 +28,9 @@ public class OperadorKPIControlador {
 
     @Autowired
     private KPIITServicio ingresoServicio;
+    
+    @Autowired
+    private KPITPServicio totalProductoServicio;
 
     @PostMapping("/global")
     public KPIResponse obtenerKPIsGlobales(
@@ -42,9 +49,10 @@ public class OperadorKPIControlador {
         // Usar los servicios correctamente
         KPIGNResponse gananciaResponse = gananciaServicio.obtenerGananciaNeta(token, negocioId);
         KPIITResponse ingresoResponse = ingresoServicio.obtenerIngresosTotales(token, negocioId);
+        List<KPITP> totales = totalProductoServicio.obtenerTopProductos(token, negocioId);
 
         // Armar respuesta compuesta
-        return new KPIResponse(gananciaResponse, ingresoResponse);
+        return new KPIResponse(gananciaResponse, ingresoResponse, totales);
     }
 }
 

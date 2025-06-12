@@ -1,6 +1,7 @@
 package com.api.red.negocios.Controladores;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -108,4 +109,30 @@ public class UsuarioNegocioControlador {
         }
         return ResponseEntity.notFound().build();
     }
+    
+    @GetMapping("/mis-negocios")
+    public ResponseEntity<List<Negocio>> obtenerNegociosDelUsuario() {
+        // Obtener autenticación
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // Buscar usuario
+        String username = auth.getName();
+        Usuario usuario = usuarioRepositorio.findByUsername(username);
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        // Obtener negocios asignados al usuario
+        List<UsuarioNegocio> relaciones = repository.findByUsuario(usuario);
+        List<Negocio> negocios = relaciones.stream()
+            .filter(UsuarioNegocio::getActivo)
+            .map(UsuarioNegocio::getNegocio)
+            .toList();
+
+        return ResponseEntity.ok(negocios);
+    }
+
 }
