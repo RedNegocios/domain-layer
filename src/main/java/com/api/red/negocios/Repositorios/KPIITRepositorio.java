@@ -17,18 +17,21 @@ public class KPIITRepositorio {
     public BigDecimal obtenerIngresosTotales(String token, Long negocioId) {
         String sql = """
             WITH usuario AS (
-                SELECT TOP 10 usuarioId
+                SELECT
+        		usuarioId
                 FROM UsuarioToken
                 WHERE token = :token
             ),
             usuarioNegociosId AS (
-                SELECT TOP 10 negocioId 
+                SELECT
+                negocioId 
                 FROM UsuarioNegocio a
                 INNER JOIN usuario b ON a.usuarioId = b.usuarioId
                 WHERE negocioId = :negocioId
             ),
             ordenes AS (
-                SELECT TOP 10 montoTotal
+                SELECT
+                montoTotal
                 FROM Orden a
                 INNER JOIN usuarioNegociosId b ON a.negocioId = b.negocioId
                 WHERE estado = 'Aceptada'

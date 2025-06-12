@@ -9,9 +9,8 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 
 @Repository
-public class KPIGNRepositorio {
-
-    @PersistenceContext
+public class KPITPRepositorio {
+	@PersistenceContext
     private EntityManager entityManager;
 
     public BigDecimal obtenerGananciaNeta(String token, Long negocioId) {

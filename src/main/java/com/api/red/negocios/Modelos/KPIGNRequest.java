@@ -6,7 +6,6 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class KPIGNRequest {
-    private String token;
 
 	private Long negocioId;
 }

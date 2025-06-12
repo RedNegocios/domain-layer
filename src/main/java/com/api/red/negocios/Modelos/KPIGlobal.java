@@ -5,7 +5,6 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class KPIITRequest {
-	
-    private Long negocioId;
+public class KPIGlobal {
+	private Long negocioId;
 }
