@@ -6,6 +6,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.api.red.negocios.DTO.LineaOrdenDTO;
 import com.api.red.negocios.DTO.OrdenDTO;
@@ -56,19 +62,27 @@ public class OrdenControlador {
 
     @GetMapping("/mis-ordenes")
     @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN_NEGOCIO')")
-    public List<Orden> obtenerOrdenesDelUsuarioAutenticado() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new IllegalArgumentException("Usuario no autenticado");
+    public ResponseEntity<List<Orden>> obtenerOrdenesDelUsuarioAutenticado(
+            @PageableDefault(size = 10, sort = "fechaOrden", direction = Sort.Direction.DESC)
+            Pageable pageable) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        String username = authentication.getName();
-        Usuario usuario = usuarioRepositorio.findByUsername(username);
+        Usuario usuario = usuarioRepositorio.findByUsername(auth.getName());
         if (usuario == null) {
-            throw new IllegalArgumentException("Usuario no encontrado");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        return ordenRepositorio.findByUsuario(usuario);
+        Page<Orden> paged = ordenRepositorio.findByUsuario(usuario, pageable);
+
+        /* ── devolvemos solo la lista pero con metadatos en cabeceras ── */
+        return ResponseEntity.ok()
+                .header("X-Total-Pages",    String.valueOf(paged.getTotalPages()))
+                .header("X-Total-Elements", String.valueOf(paged.getTotalElements()))
+                .body(paged.getContent());
     }
 
     
@@ -231,15 +245,26 @@ public class OrdenControlador {
  // In OrdenControlador.java
     @GetMapping("/historico/{negocioId}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN_NEGOCIO')")
-    public ResponseEntity<List<Orden>> obtenerHistoricoPorNegocio(@PathVariable Integer negocioId) {
-        Optional<Negocio> negocio = negocioRepositorio.findById(negocioId);
-        if (negocio.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<List<Orden>> obtenerHistoricoPorNegocio(
+            @PathVariable Integer negocioId,
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "10") int size) {
 
-        List<Orden> ordenes = ordenRepositorio.findByNegocio(negocio.get());
-        return ResponseEntity.ok(ordenes);
+        Negocio negocio = negocioRepositorio.findById(negocioId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        Page<Orden> paged = ordenRepositorio.findByNegocio(
+                negocio,
+                PageRequest.of(page, size, Sort.by("fechaOrden").descending())
+        );
+
+        // Metadatos en cabeceras → el cuerpo sigue siendo List<Orden>
+        return ResponseEntity.ok()
+                .header("X-Total-Pages",     String.valueOf(paged.getTotalPages()))
+                .header("X-Total-Elements",  String.valueOf(paged.getTotalElements()))
+                .body(paged.getContent());
     }
+
     
     @GetMapping("/detalle/{ordenId}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN_NEGOCIO')")
