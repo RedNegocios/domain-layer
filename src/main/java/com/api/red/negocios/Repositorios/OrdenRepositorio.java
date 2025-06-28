@@ -2,6 +2,8 @@ package com.api.red.negocios.Repositorios;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,4 +15,6 @@ import com.api.red.negocios.Modelos.Usuario;
 public interface OrdenRepositorio extends JpaRepository<Orden, Integer> {
     List<Orden> findByUsuario(Usuario usuario);
     List<Orden> findByNegocio(Negocio negocio);
+    Page<Orden> findByNegocio(Negocio negocio, Pageable pageable);
+    Page<Orden> findByUsuario(Usuario usuario, Pageable pageable);
 }
