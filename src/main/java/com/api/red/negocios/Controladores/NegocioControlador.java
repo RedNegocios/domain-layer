@@ -39,11 +39,7 @@ public class NegocioControlador {
     private UsuarioRepositorio usuarioRepositorio;
 
     @GetMapping
-<<<<<<< HEAD
-    @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")
-=======
     @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN_NEGOCIO')")
->>>>>>> b2c9ea082df80b1bb1f8c679614d2fa6886aee9e
     public List<Negocio> getAllNegocios() {
     	logger.info("al menos se ejecuta el metodo loledkorfifoiuerhbfgl;iserbg");
     	// Obtener el objeto de autenticación
