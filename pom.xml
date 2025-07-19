@@ -169,7 +169,7 @@
 							<tasks>
 								<copy
 									file="${project.build.directory}/${project.build.finalName}.war"
-									tofile="D:/Servers/RedNegocios/tomcat10/apache-tomcat-10.1.33/webapps/${project.build.finalName}.war" />
+									tofile="/Users/maureengalindo/tomcat/webapps/${project.build.finalName}.war" />
 							</tasks>
 						</configuration>
 					</execution>

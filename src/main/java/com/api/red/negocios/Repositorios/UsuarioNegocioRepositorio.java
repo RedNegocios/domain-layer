@@ -2,6 +2,9 @@ package com.api.red.negocios.Repositorios;
 
 import java.util.List;
 
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -17,5 +20,9 @@ public interface UsuarioNegocioRepositorio extends JpaRepository<UsuarioNegocio,
 
     // Encontrar registros por usuario
     List<UsuarioNegocio> findByUsuario(Usuario usuario);
+    
+    // Encontrar solicitudes pendientes en una lista de negocios (paginado)
+    Page<UsuarioNegocio> findByNegocioInAndEstatusId(List<Negocio> negocios, Integer estatusId, Pageable pageable);
+
 }
 

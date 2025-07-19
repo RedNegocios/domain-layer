@@ -1,7 +1,9 @@
 package com.api.red.negocios.Controladores;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -62,7 +64,7 @@ public class OrdenControlador {
 
     @GetMapping("/mis-ordenes")
     @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN_NEGOCIO')")
-    public ResponseEntity<List<Orden>> obtenerOrdenesDelUsuarioAutenticado(
+    public ResponseEntity<Map<String, Object>> obtenerOrdenesDelUsuarioAutenticado(
             @PageableDefault(size = 10, sort = "fechaOrden", direction = Sort.Direction.DESC)
             Pageable pageable) {
 
@@ -78,12 +80,17 @@ public class OrdenControlador {
 
         Page<Orden> paged = ordenRepositorio.findByUsuario(usuario, pageable);
 
-        /* ── devolvemos solo la lista pero con metadatos en cabeceras ── */
-        return ResponseEntity.ok()
-                .header("X-Total-Pages",    String.valueOf(paged.getTotalPages()))
-                .header("X-Total-Elements", String.valueOf(paged.getTotalElements()))
-                .body(paged.getContent());
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("content",       paged.getContent());
+        response.put("page",          paged.getNumber());
+        response.put("size",          paged.getSize());
+        response.put("totalPages",    paged.getTotalPages());
+        response.put("totalElements", paged.getTotalElements());
+        response.put("last",          paged.isLast());
+
+        return ResponseEntity.ok(response);
     }
+
 
     
     // Obtener una orden por ID
@@ -245,9 +252,9 @@ public class OrdenControlador {
  // In OrdenControlador.java
     @GetMapping("/historico/{negocioId}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN_NEGOCIO')")
-    public ResponseEntity<List<Orden>> obtenerHistoricoPorNegocio(
+    public ResponseEntity<Map<String, Object>> obtenerHistoricoPorNegocio(
             @PathVariable Integer negocioId,
-            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         Negocio negocio = negocioRepositorio.findById(negocioId)
@@ -258,11 +265,15 @@ public class OrdenControlador {
                 PageRequest.of(page, size, Sort.by("fechaOrden").descending())
         );
 
-        // Metadatos en cabeceras → el cuerpo sigue siendo List<Orden>
-        return ResponseEntity.ok()
-                .header("X-Total-Pages",     String.valueOf(paged.getTotalPages()))
-                .header("X-Total-Elements",  String.valueOf(paged.getTotalElements()))
-                .body(paged.getContent());
+        Map<String, Object> response = new LinkedHashMap();
+        response.put("content",       paged.getContent());
+        response.put("page",          paged.getNumber());
+        response.put("size",          paged.getSize());
+        response.put("totalPages",    paged.getTotalPages());
+        response.put("totalElements", paged.getTotalElements());
+        response.put("last",          paged.isLast());
+
+        return ResponseEntity.ok(response);
     }
 
     
