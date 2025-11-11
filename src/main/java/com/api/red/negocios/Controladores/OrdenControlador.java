@@ -140,13 +140,6 @@ public class OrdenControlador {
             nuevaLinea.setCantidad(linea.getCantidad());
             nuevaLinea.setPrecioUnitario(linea.getPrecioUnitario());
 
-            // Campos de gobernanza
-            nuevaLinea.setFechaRegistro(LocalDateTime.now());
-            nuevaLinea.setCreadoPor(username);
-            nuevaLinea.setFechaCreacion(LocalDateTime.now());
-            nuevaLinea.setModificadoPor(username);
-            nuevaLinea.setFechaModificacion(LocalDateTime.now());
-
             lineaOrdenRepositorio.save(nuevaLinea);
         }
 

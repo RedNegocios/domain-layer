@@ -4,7 +4,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
@@ -41,22 +40,5 @@ public class LineaOrden {
 
     @Column(nullable = false)
     private BigDecimal precioUnitario;
-
-    // Timestamp y gobernanza
-
-    @Column(name = "fechaRegistro", columnDefinition = "DATETIME", nullable = false)
-    private LocalDateTime fechaRegistro;
-
-    @Column(name = "creadoPor", length = 100)
-    private String creadoPor;
-
-    @Column(name = "fechaCreacion", columnDefinition = "DATETIME")
-    private LocalDateTime fechaCreacion;
-
-    @Column(name = "modificadoPor", length = 100)
-    private String modificadoPor;
-
-    @Column(name = "fechaModificacion", columnDefinition = "DATETIME")
-    private LocalDateTime fechaModificacion;
 }
 
