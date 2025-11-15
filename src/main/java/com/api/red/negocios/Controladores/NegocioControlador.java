@@ -72,6 +72,27 @@ public class NegocioControlador {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
+    @GetMapping("/lista")
+    public ResponseEntity<List<com.api.red.negocios.DTO.NegocioListaDTO>> getListaNegocios() {
+        try {
+            List<Negocio> negocios = negocioRepositorio.findAll();
+            List<com.api.red.negocios.DTO.NegocioListaDTO> negociosDTO = negocios.stream()
+                .map(negocio -> new com.api.red.negocios.DTO.NegocioListaDTO(
+                    negocio.getNegocioId(),
+                    negocio.getNombre(),
+                    negocio.getDescripcion(),
+                    negocio.getActivo(),
+                    negocio.getFechaCreacion()
+                ))
+                .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(negociosDTO);
+        } catch (Exception e) {
+            logger.error("Error al obtener lista de negocios: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @PostMapping
     public ResponseEntity<Negocio> createNegocio(@RequestBody Negocio negocio) {
         negocio.setFechaCreacion(LocalDateTime.now());

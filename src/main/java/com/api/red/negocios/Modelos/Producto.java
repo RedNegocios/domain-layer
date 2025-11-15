@@ -11,6 +11,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Data
@@ -41,5 +43,9 @@ public class Producto {
     private String eliminadoPor;
 
     private LocalDateTime fechaEliminacion;
+    
+    @ManyToOne
+    @JoinColumn(name = "categoriaId")
+    private Categoria categoria;
 }
 

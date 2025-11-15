@@ -56,6 +56,9 @@ public class OrdenControlador {
     @Autowired
     private UsuarioRepositorio usuarioRepositorio;
 
+    @Autowired
+    private com.api.red.negocios.Servicios.OrdenService ordenService;
+
     // Obtener todas las órdenes
     @GetMapping
     public List<Orden> obtenerTodasLasOrdenes() {
@@ -68,27 +71,21 @@ public class OrdenControlador {
             @PageableDefault(size = 10, sort = "fechaOrden", direction = Sort.Direction.DESC)
             Pageable pageable) {
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+        try {
+            Page<Orden> paged = ordenService.obtenerOrdenesDelUsuario(pageable);
 
-        Usuario usuario = usuarioRepositorio.findByUsername(auth.getName());
-        if (usuario == null) {
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("content",       paged.getContent());
+            response.put("page",          paged.getNumber());
+            response.put("size",          paged.getSize());
+            response.put("totalPages",    paged.getTotalPages());
+            response.put("totalElements", paged.getTotalElements());
+            response.put("last",          paged.isLast());
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-
-        Page<Orden> paged = ordenRepositorio.findByUsuario(usuario, pageable);
-
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("content",       paged.getContent());
-        response.put("page",          paged.getNumber());
-        response.put("size",          paged.getSize());
-        response.put("totalPages",    paged.getTotalPages());
-        response.put("totalElements", paged.getTotalElements());
-        response.put("last",          paged.isLast());
-
-        return ResponseEntity.ok(response);
     }
 
 
@@ -105,45 +102,12 @@ public class OrdenControlador {
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN_NEGOCIO')")
     public ResponseEntity<Orden> crearOrden(@RequestBody OrdenDTO ordenDTO) {
-        // Obtener el usuario autenticado
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new IllegalArgumentException("Usuario no autenticado");
+        try {
+            Orden nuevaOrden = ordenService.crearOrden(ordenDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(nuevaOrden);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
         }
-
-        String username = authentication.getName();
-        Usuario usuario = usuarioRepositorio.findByUsername(username);
-        if (usuario == null) {
-            throw new IllegalArgumentException("Usuario no encontrado");
-        }
-
-        // Buscar el negocio asociado
-        Negocio negocio = negocioRepositorio.findById(ordenDTO.getNegocioId())
-                .orElseThrow(() -> new IllegalArgumentException("Negocio no encontrado"));
-
-        // Crear la nueva orden
-        Orden nuevaOrden = new Orden();
-        nuevaOrden.setNegocio(negocio);
-        nuevaOrden.setUsuario(usuario);
-        nuevaOrden.setNumeroOrden(UUID.randomUUID().toString());
-        nuevaOrden.setFechaOrden(LocalDateTime.now());
-        nuevaOrden.setMontoTotal(ordenDTO.getMontoTotal());
-        nuevaOrden.setEstado("Pendiente");
-
-        Orden ordenGuardada = ordenRepositorio.save(nuevaOrden);
-
-        // Guardar las líneas de la orden con campos de gobernanza
-        for (LineaOrdenDTO linea : ordenDTO.getLineasOrden()) {
-            LineaOrden nuevaLinea = new LineaOrden();
-            nuevaLinea.setOrden(ordenGuardada);
-            nuevaLinea.setNegocioProducto(linea.getNegocioProducto());
-            nuevaLinea.setCantidad(linea.getCantidad());
-            nuevaLinea.setPrecioUnitario(linea.getPrecioUnitario());
-
-            lineaOrdenRepositorio.save(nuevaLinea);
-        }
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(ordenGuardada);
     }
 
 
