@@ -1,7 +1,11 @@
 package com.api.red.negocios.Controladores;
 
 import org.apache.logging.log4j.Logger;
+import org.hibernate.query.SortDirection;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -9,6 +13,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
 
 import com.api.red.negocios.DTO.NegocioUsuariosDTO;
 import com.api.red.negocios.DTO.UsuarioDTO;
@@ -21,7 +27,9 @@ import com.api.red.negocios.Repositorios.UsuarioRepositorio;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -62,6 +70,27 @@ public class NegocioControlador {
         Optional<Negocio> negocio = negocioRepositorio.findById(id);
         return negocio.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
+
+    @GetMapping("/lista")
+    public ResponseEntity<List<com.api.red.negocios.DTO.NegocioListaDTO>> getListaNegocios() {
+        try {
+            List<Negocio> negocios = negocioRepositorio.findAll();
+            List<com.api.red.negocios.DTO.NegocioListaDTO> negociosDTO = negocios.stream()
+                .map(negocio -> new com.api.red.negocios.DTO.NegocioListaDTO(
+                    negocio.getNegocioId(),
+                    negocio.getNombre(),
+                    negocio.getDescripcion(),
+                    negocio.getActivo(),
+                    negocio.getFechaCreacion()
+                ))
+                .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(negociosDTO);
+        } catch (Exception e) {
+            logger.error("Error al obtener lista de negocios: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @PostMapping
@@ -106,63 +135,52 @@ public class NegocioControlador {
     }
     
  // Nuevo endpoint para admin negocio agregar mas logica porque debe de traer de cada uno debe eligir cual manejar y debe aceptar o rechazar las solicitudes  more todo
-    @GetMapping("/admin")
+
+
+    @GetMapping("/admin/solicitudes")
     @PreAuthorize("hasAuthority('ROLE_ADMIN_NEGOCIO')")
-    public List<NegocioUsuariosDTO> getNegociosConUsuariosPendientes() {
-        logger.info("Método getNegociosConUsuariosPendientes ejecutado por ROLE_ADMIN_NEGOCIO");
+    public ResponseEntity<Map<String, Object>> getSolicitudesPaginadas(
+            @PageableDefault(size = 10, sort = "usuario.usuarioId")
+            Pageable pageable) {
 
-        // Obtener el usuario autenticado
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            logger.error("Usuario no autenticado");
-            throw new IllegalArgumentException("Usuario no autenticado");
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         }
 
-        String username = authentication.getName();
-        Usuario usuario = usuarioRepositorio.findByUsername(username);
+        Usuario usuario = usuarioRepositorio.findByUsername(auth.getName());
         if (usuario == null) {
-            logger.error("Usuario no encontrado: {}", username);
-            throw new IllegalArgumentException("Usuario no encontrado");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
-        // Obtener los registros de UsuarioNegocio asociados al usuario
-        List<UsuarioNegocio> usuarioNegocios = usuario.getUsuarioNegocios();
-        logger.info("UsuarioNegocios para el usuario {}: {}", username, usuarioNegocios);
-
-        // Extraer los negocios asociados
-        List<Negocio> negociosAsociados = usuarioNegocios.stream()
+        List<Negocio> negocios = usuario.getUsuarioNegocios().stream()
                 .map(UsuarioNegocio::getNegocio)
                 .distinct()
-                .collect(Collectors.toList());
-        logger.info("Negocios asociados al usuario {}: {}", username, negociosAsociados);
+                .toList();
 
-        // Crear una lista para agrupar la respuesta
-        List<NegocioUsuariosDTO> resultado = new ArrayList<>();
+        Page<UsuarioNegocio> solicitudes = usuarioNegocioRepositorio.findByNegocioInAndEstatusId(negocios, 1, pageable);
 
-        for (Negocio negocio : negociosAsociados) {
-        	logger.info("Negocios asociados {}", negociosAsociados);
-            // Obtener los registros pendientes (estatusId = 1) para cada negocio
-            List<UsuarioNegocio> pendientes = usuarioNegocioRepositorio.findByNegocioAndEstatusId(negocio, 1);
+        List<Map<String, Object>> content = solicitudes.getContent().stream().map(un -> {
+            Map<String, Object> dto = new LinkedHashMap<>();
+            dto.put("usuarioNegocioId", un.getUsuarioNegocioId());
+            dto.put("username", un.getUsuario().getUsername());
+            dto.put("email", un.getUsuario().getEmail());
+            dto.put("negocioNombre", un.getNegocio().getNombre());
+            return dto;
+        }).toList();
 
-            // Transformar a DTO de usuarios
-            List<UsuarioDTO> usuariosDTO = pendientes.stream()
-                    .map(usuarioNegocio -> new UsuarioDTO(
-                            usuarioNegocio.getUsuario().getUsername(),
-                            usuarioNegocio.getUsuario().getEmail(),
-                            usuarioNegocio.getUsuarioNegocioId()
-                    ))
-                    .distinct()
-                    .collect(Collectors.toList());
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("content", content);
+        response.put("page", solicitudes.getNumber());
+        response.put("size", solicitudes.getSize());
+        response.put("totalPages", solicitudes.getTotalPages());
+        response.put("totalElements", solicitudes.getTotalElements());
+        response.put("last", solicitudes.isLast());
 
-            // Agregar solo si hay usuarios pendientes
-            if (!usuariosDTO.isEmpty()) {
-                resultado.add(new NegocioUsuariosDTO(negocio.getNombre(), usuariosDTO));
-            }
-        }
-
-        logger.info("Negocios con usuarios pendientes: {}", resultado);
-        return resultado;
+        return ResponseEntity.ok(response);
     }
+
+
 
     @GetMapping("/admin-negocios")
     @PreAuthorize("hasAuthority('ROLE_ADMIN_NEGOCIO')")

@@ -1,7 +1,9 @@
 package com.api.red.negocios.Controladores;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -54,6 +56,9 @@ public class OrdenControlador {
     @Autowired
     private UsuarioRepositorio usuarioRepositorio;
 
+    @Autowired
+    private com.api.red.negocios.Servicios.OrdenService ordenService;
+
     // Obtener todas las órdenes
     @GetMapping
     public List<Orden> obtenerTodasLasOrdenes() {
@@ -62,28 +67,27 @@ public class OrdenControlador {
 
     @GetMapping("/mis-ordenes")
     @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN_NEGOCIO')")
-    public ResponseEntity<List<Orden>> obtenerOrdenesDelUsuarioAutenticado(
+    public ResponseEntity<Map<String, Object>> obtenerOrdenesDelUsuarioAutenticado(
             @PageableDefault(size = 10, sort = "fechaOrden", direction = Sort.Direction.DESC)
             Pageable pageable) {
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+        try {
+            Page<Orden> paged = ordenService.obtenerOrdenesDelUsuario(pageable);
 
-        Usuario usuario = usuarioRepositorio.findByUsername(auth.getName());
-        if (usuario == null) {
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("content",       paged.getContent());
+            response.put("page",          paged.getNumber());
+            response.put("size",          paged.getSize());
+            response.put("totalPages",    paged.getTotalPages());
+            response.put("totalElements", paged.getTotalElements());
+            response.put("last",          paged.isLast());
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-
-        Page<Orden> paged = ordenRepositorio.findByUsuario(usuario, pageable);
-
-        /* ── devolvemos solo la lista pero con metadatos en cabeceras ── */
-        return ResponseEntity.ok()
-                .header("X-Total-Pages",    String.valueOf(paged.getTotalPages()))
-                .header("X-Total-Elements", String.valueOf(paged.getTotalElements()))
-                .body(paged.getContent());
     }
+
 
     
     // Obtener una orden por ID
@@ -98,52 +102,12 @@ public class OrdenControlador {
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN_NEGOCIO')")
     public ResponseEntity<Orden> crearOrden(@RequestBody OrdenDTO ordenDTO) {
-        // Obtener el usuario autenticado
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new IllegalArgumentException("Usuario no autenticado");
+        try {
+            Orden nuevaOrden = ordenService.crearOrden(ordenDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(nuevaOrden);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
         }
-
-        String username = authentication.getName();
-        Usuario usuario = usuarioRepositorio.findByUsername(username);
-        if (usuario == null) {
-            throw new IllegalArgumentException("Usuario no encontrado");
-        }
-
-        // Buscar el negocio asociado
-        Negocio negocio = negocioRepositorio.findById(ordenDTO.getNegocioId())
-                .orElseThrow(() -> new IllegalArgumentException("Negocio no encontrado"));
-
-        // Crear la nueva orden
-        Orden nuevaOrden = new Orden();
-        nuevaOrden.setNegocio(negocio);
-        nuevaOrden.setUsuario(usuario);
-        nuevaOrden.setNumeroOrden(UUID.randomUUID().toString());
-        nuevaOrden.setFechaOrden(LocalDateTime.now());
-        nuevaOrden.setMontoTotal(ordenDTO.getMontoTotal());
-        nuevaOrden.setEstado("Pendiente");
-
-        Orden ordenGuardada = ordenRepositorio.save(nuevaOrden);
-
-        // Guardar las líneas de la orden con campos de gobernanza
-        for (LineaOrdenDTO linea : ordenDTO.getLineasOrden()) {
-            LineaOrden nuevaLinea = new LineaOrden();
-            nuevaLinea.setOrden(ordenGuardada);
-            nuevaLinea.setNegocioProducto(linea.getNegocioProducto());
-            nuevaLinea.setCantidad(linea.getCantidad());
-            nuevaLinea.setPrecioUnitario(linea.getPrecioUnitario());
-
-            // Campos de gobernanza
-            nuevaLinea.setFechaRegistro(LocalDateTime.now());
-            nuevaLinea.setCreadoPor(username);
-            nuevaLinea.setFechaCreacion(LocalDateTime.now());
-            nuevaLinea.setModificadoPor(username);
-            nuevaLinea.setFechaModificacion(LocalDateTime.now());
-
-            lineaOrdenRepositorio.save(nuevaLinea);
-        }
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(ordenGuardada);
     }
 
 
@@ -245,9 +209,9 @@ public class OrdenControlador {
  // In OrdenControlador.java
     @GetMapping("/historico/{negocioId}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN_NEGOCIO')")
-    public ResponseEntity<List<Orden>> obtenerHistoricoPorNegocio(
+    public ResponseEntity<Map<String, Object>> obtenerHistoricoPorNegocio(
             @PathVariable Integer negocioId,
-            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         Negocio negocio = negocioRepositorio.findById(negocioId)
@@ -258,11 +222,15 @@ public class OrdenControlador {
                 PageRequest.of(page, size, Sort.by("fechaOrden").descending())
         );
 
-        // Metadatos en cabeceras → el cuerpo sigue siendo List<Orden>
-        return ResponseEntity.ok()
-                .header("X-Total-Pages",     String.valueOf(paged.getTotalPages()))
-                .header("X-Total-Elements",  String.valueOf(paged.getTotalElements()))
-                .body(paged.getContent());
+        Map<String, Object> response = new LinkedHashMap();
+        response.put("content",       paged.getContent());
+        response.put("page",          paged.getNumber());
+        response.put("size",          paged.getSize());
+        response.put("totalPages",    paged.getTotalPages());
+        response.put("totalElements", paged.getTotalElements());
+        response.put("last",          paged.isLast());
+
+        return ResponseEntity.ok(response);
     }
 
     
