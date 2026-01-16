@@ -30,26 +30,20 @@ jobs:
       - name: Pull latest changes
         run: |
           cd C:\Projects\domain-layer
-          Write-Host "📥 Descargando cambios desde GitHub..." -ForegroundColor Cyan
+          Write-Host "Descargando cambios desde GitHub..." -ForegroundColor Cyan
           git fetch origin
-          $currentBranch = git rev-parse --abbrev-ref HEAD
-          Write-Host "📍 Rama actual: $currentBranch" -ForegroundColor Yellow
           git reset --hard origin/main
-          Write-Host "✅ Código actualizado desde GitHub" -ForegroundColor Green
-          Write-Host "📝 Último commit:" -ForegroundColor Cyan
+          Write-Host "Codigo actualizado desde GitHub" -ForegroundColor Green
           git log --oneline -1
         shell: powershell
 
       - name: Ejecutar build
         run: |
           cd C:\Projects\domain-layer
-          Write-Host "🔨 Compilando proyecto..." -ForegroundColor Cyan
-          & .\mvnw.cmd clean package -DskipTests
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "❌ Error en la compilación" -ForegroundColor Red
-            exit 1
-          }
-          Write-Host "✅ Compilación exitosa" -ForegroundColor Green
+          Write-Host "Compilando proyecto..." -ForegroundColor Cyan
+          cmd /c "mvnw.cmd clean package -DskipTests"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Write-Host "Compilacion exitosa" -ForegroundColor Green
         shell: powershell
 
       - name: Reiniciar aplicación
