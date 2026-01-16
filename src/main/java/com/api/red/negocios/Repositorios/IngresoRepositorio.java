@@ -35,7 +35,7 @@ public class IngresoRepositorio {
 
         switch (tipo.toLowerCase()) {
 
-            /* ░░░ Agregado diario ░░░ */
+            // Agregado diario
             case "dia" -> {
                 selectExp = """
                     CAST(o.fechaCreacion AS DATE) AS fecha,
@@ -50,7 +50,7 @@ public class IngresoRepositorio {
                 orderExp = "anio, mes, dia";
             }
 
-            /* ░░░ Agregado mensual ░░░ */
+            // Agregado mensual
             case "mes" -> {
                 selectExp = """
                     FORMAT(o.fechaCreacion,'yyyy-MM') AS fecha,
@@ -65,7 +65,7 @@ public class IngresoRepositorio {
                 orderExp = "anio, mes";
             }
 
-            /* ░░░ Agregado anual ░░░ */
+            // Agregado anual
             case "anio" -> {
                 selectExp = """
                     YEAR(o.fechaCreacion) AS fecha,
@@ -77,10 +77,10 @@ public class IngresoRepositorio {
                 orderExp = "anio";
             }
 
-            default -> throw new IllegalArgumentException("Tipo inválido: " + tipo);
+            default -> throw new IllegalArgumentException("Tipo invalido: " + tipo);
         }
 
-        /* ───────────── Query nativa con filtro por fechas ───────────── */
+        // Query nativa con filtro por fechas
 
         String sql = """
             WITH usuario_cte AS (
@@ -120,7 +120,7 @@ public class IngresoRepositorio {
         @SuppressWarnings("unchecked")
         List<Object[]> rows = q.getResultList();
 
-        /* ───────────── Mapear a DTO ───────────── */
+        // Mapear a DTO
 
         return rows.stream()
                    .map(r -> new IngresoAgregadoDTO(

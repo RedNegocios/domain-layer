@@ -17,7 +17,7 @@ public class KPIGNRepositorio {
     public BigDecimal obtenerGananciaNeta(String token, Long negocioId) {
         String sql = """
             WITH usuario AS (
-        		SELECT
+                SELECT
                 usuarioId
                 FROM UsuarioToken
                 WHERE token = :token
