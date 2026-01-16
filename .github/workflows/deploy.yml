@@ -14,11 +14,11 @@ jobs:
     steps:
       - name: Verificar ruta del proyecto
         run: |
-          if (-Not (Test-Path "C:\Projects\domain-layer")) {
-            Write-Host "❌ Error: La ruta C:\Projects\domain-layer no existe" -ForegroundColor Red
+          if (-Not (Test-Path C:\Projects\domain-layer)) {
+            Write-Host "Error: La ruta no existe" -ForegroundColor Red
             exit 1
           }
-          Write-Host "✅ Ruta del proyecto verificada: C:\Projects\domain-layer" -ForegroundColor Green
+          Write-Host "Ruta del proyecto verificada" -ForegroundColor Green
         shell: powershell
 
       - name: Pull latest changes
@@ -35,6 +35,9 @@ jobs:
         run: |
           cd C:\Projects\domain-layer
           Write-Host "Compilando proyecto..." -ForegroundColor Cyan
+          $javaExe = Get-Command java -ErrorAction Stop
+          $env:JAVA_HOME = $javaExe.Source -replace '\\bin\\java.exe$', ''
+          Write-Host "JAVA_HOME configurado: $env:JAVA_HOME" -ForegroundColor Green
           cmd /c "mvnw.cmd clean package -DskipTests"
           if ($LASTEXITCODE -ne 0) { exit 1 }
           Write-Host "Compilacion exitosa" -ForegroundColor Green
@@ -43,30 +46,30 @@ jobs:
       - name: Reiniciar aplicación
         run: |
           cd C:\Projects\domain-layer
-          Write-Host "🛑 Deteniendo aplicación anterior..." -ForegroundColor Yellow
+          Write-Host "Deteniendo aplicacion anterior..." -ForegroundColor Yellow
           Stop-Process -Name "java" -Force -ErrorAction SilentlyContinue
           Start-Sleep -Seconds 3
-          Write-Host "🚀 Iniciando nueva versión..." -ForegroundColor Cyan
+          Write-Host "Iniciando nueva version..." -ForegroundColor Cyan
           $jarFile = Get-ChildItem -Path "target" -Filter "negocios-*.jar" | Select-Object -First 1
           if ($jarFile) {
             New-Item -ItemType Directory -Path "logs" -Force | Out-Null
             Start-Process -FilePath "java" -ArgumentList "-jar", "target\$($jarFile.Name)" -WindowStyle Hidden -RedirectStandardOutput "logs\app.log" -RedirectStandardError "logs\error.log"
-            Write-Host "✅ Backend actualizado y ejecutándose" -ForegroundColor Green
-            Write-Host "📝 Logs en: logs\app.log" -ForegroundColor White
+            Write-Host "Backend actualizado y ejecutandose" -ForegroundColor Green
+            Write-Host "Logs en: logs\app.log" -ForegroundColor White
           } else {
-            Write-Host "❌ Error: No se encontró el archivo JAR compilado" -ForegroundColor Red
+            Write-Host "Error: No se encontro el archivo JAR compilado" -ForegroundColor Red
             exit 1
           }
         shell: powershell
 
       - name: Resumen del deployment
         run: |
-          Write-Host "`n================================" -ForegroundColor Cyan
-          Write-Host "   DEPLOYMENT COMPLETADO" -ForegroundColor Green
           Write-Host "================================" -ForegroundColor Cyan
-          Write-Host "📁 Proyecto: C:\Projects\domain-layer" -ForegroundColor White
-          Write-Host "🌍 Ambiente: production" -ForegroundColor White
-          Write-Host "⏰ Fecha: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor White
-          Write-Host "👤 Ejecutado por: ${{ github.actor }}" -ForegroundColor White
-          Write-Host "================================`n" -ForegroundColor Cyan
+          Write-Host "DEPLOYMENT COMPLETADO" -ForegroundColor Green
+          Write-Host "================================" -ForegroundColor Cyan
+          Write-Host "Proyecto: C:\Projects\domain-layer" -ForegroundColor White
+          Write-Host "Ambiente: production" -ForegroundColor White
+          Write-Host "Fecha: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor White
+          Write-Host "Ejecutado por: ${{ github.actor }}" -ForegroundColor White
+          Write-Host "================================" -ForegroundColor Cyan
         shell: powershell
