@@ -14,11 +14,11 @@ jobs:
     steps:
       - name: Verificar ruta del proyecto
         run: |
-          if (-Not (Test-Path "C:\Projects\RedNegociosBackend")) {
-            Write-Host "❌ Error: La ruta C:\Projects\RedNegociosBackend no existe" -ForegroundColor Red
+          if (-Not (Test-Path "C:\Projects\domain-layer")) {
+            Write-Host "❌ Error: La ruta C:\Projects\domain-layer no existe" -ForegroundColor Red
             exit 1
           }
-          Write-Host "✅ Ruta del proyecto verificada: C:\Projects\RedNegociosBackend" -ForegroundColor Green
+          Write-Host "✅ Ruta del proyecto verificada: C:\Projects\domain-layer" -ForegroundColor Green
         shell: powershell
 
       - name: Configurar Java
@@ -29,7 +29,7 @@ jobs:
 
       - name: Pull latest changes
         run: |
-          cd "C:\Projects\RedNegociosBackend"
+          cd "C:\Projects\domain-layer"
           
           Write-Host "📥 Descargando cambios desde GitHub..." -ForegroundColor Cyan
           git fetch origin
@@ -49,7 +49,7 @@ jobs:
 
       - name: Ejecutar build
         run: |
-          cd "C:\Projects\RedNegociosBackend"
+          cd "C:\Projects\domain-layer"
           Write-Host "🔨 Compilando proyecto..." -ForegroundColor Cyan
           .\mvnw.cmd clean package -DskipTests
           if ($LASTEXITCODE -ne 0) {
@@ -61,7 +61,7 @@ jobs:
 
       - name: Reiniciar aplicación
         run: |
-          cd "C:\Projects\RedNegociosBackend"
+          cd "C:\Projects\domain-layer"
           Write-Host "🛑 Deteniendo aplicación anterior..." -ForegroundColor Yellow
           Stop-Process -Name "java" -Force -ErrorAction SilentlyContinue
           Start-Sleep -Seconds 3
@@ -92,7 +92,7 @@ jobs:
           Write-Host "`n================================" -ForegroundColor Cyan
           Write-Host "   DEPLOYMENT COMPLETADO" -ForegroundColor Green
           Write-Host "================================" -ForegroundColor Cyan
-          Write-Host "📁 Proyecto: C:\Projects\RedNegociosBackend" -ForegroundColor White
+          Write-Host "📁 Proyecto: C:\Projects\domain-layer" -ForegroundColor White
           Write-Host "🌍 Ambiente: production" -ForegroundColor White
           Write-Host "⏰ Fecha: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor White
           Write-Host "👤 Ejecutado por: ${{ github.actor }}" -ForegroundColor White
