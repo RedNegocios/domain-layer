@@ -21,12 +21,6 @@ jobs:
           Write-Host "✅ Ruta del proyecto verificada: C:\Projects\domain-layer" -ForegroundColor Green
         shell: powershell
 
-      - name: Configurar Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
       - name: Pull latest changes
         run: |
           cd C:\Projects\domain-layer
