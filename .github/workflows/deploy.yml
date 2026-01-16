@@ -25,9 +25,11 @@ jobs:
         run: |
           cd C:\Projects\domain-layer
           Write-Host "Descargando cambios desde GitHub..." -ForegroundColor Cyan
-          git fetch origin
+          git remote -v
+          git fetch --all
           git reset --hard origin/main
           Write-Host "Codigo actualizado desde GitHub" -ForegroundColor Green
+          Write-Host "Commit actual:"
           git log --oneline -1
         shell: powershell
 
