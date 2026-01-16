@@ -29,29 +29,22 @@ jobs:
 
       - name: Pull latest changes
         run: |
-          cd "C:\Projects\domain-layer"
-          
+          cd C:\Projects\domain-layer
           Write-Host "📥 Descargando cambios desde GitHub..." -ForegroundColor Cyan
           git fetch origin
-          
           $currentBranch = git rev-parse --abbrev-ref HEAD
           Write-Host "📍 Rama actual: $currentBranch" -ForegroundColor Yellow
-          
           git reset --hard origin/main
-          
           Write-Host "✅ Código actualizado desde GitHub" -ForegroundColor Green
           Write-Host "📝 Último commit:" -ForegroundColor Cyan
           git log --oneline -1
-          
-          Write-Host "`n📊 Estado del repositorio:" -ForegroundColor Cyan
-          git status
         shell: powershell
 
       - name: Ejecutar build
         run: |
-          cd "C:\Projects\domain-layer"
+          cd C:\Projects\domain-layer
           Write-Host "🔨 Compilando proyecto..." -ForegroundColor Cyan
-          .\mvnw.cmd clean package -DskipTests
+          & .\mvnw.cmd clean package -DskipTests
           if ($LASTEXITCODE -ne 0) {
             Write-Host "❌ Error en la compilación" -ForegroundColor Red
             exit 1
@@ -61,24 +54,15 @@ jobs:
 
       - name: Reiniciar aplicación
         run: |
-          cd "C:\Projects\domain-layer"
+          cd C:\Projects\domain-layer
           Write-Host "🛑 Deteniendo aplicación anterior..." -ForegroundColor Yellow
           Stop-Process -Name "java" -Force -ErrorAction SilentlyContinue
           Start-Sleep -Seconds 3
-          
           Write-Host "🚀 Iniciando nueva versión..." -ForegroundColor Cyan
           $jarFile = Get-ChildItem -Path "target" -Filter "negocios-*.jar" | Select-Object -First 1
-          
           if ($jarFile) {
-            # Crear carpeta de logs si no existe
             New-Item -ItemType Directory -Path "logs" -Force | Out-Null
-            
-            Start-Process -FilePath "java" `
-                         -ArgumentList "-jar", "target\$($jarFile.Name)" `
-                         -WindowStyle Hidden `
-                         -RedirectStandardOutput "logs\app.log" `
-                         -RedirectStandardError "logs\error.log"
-            
+            Start-Process -FilePath "java" -ArgumentList "-jar", "target\$($jarFile.Name)" -WindowStyle Hidden -RedirectStandardOutput "logs\app.log" -RedirectStandardError "logs\error.log"
             Write-Host "✅ Backend actualizado y ejecutándose" -ForegroundColor Green
             Write-Host "📝 Logs en: logs\app.log" -ForegroundColor White
           } else {
