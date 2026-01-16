@@ -1,0 +1,50 @@
+name: Deploy Backend to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Spring Boot App to Windows Server
+    uses: RedNegocios/dev-ops/.github/workflows/windows-deploy.yml@main
+    with:
+      # Ruta donde está clonado el proyecto en el servidor Windows
+      project-path: 'C:\Projects\RedNegociosBackend'
+      
+      # Versión de Java (ajusta según tu pom.xml - actualmente Java 17)
+      java-version: '17'
+      
+      # Compilar con Maven usando el wrapper de Windows
+      build-command: |
+        .\mvnw.cmd clean package -DskipTests
+      
+      # Reiniciar la aplicación Spring Boot
+      post-deploy-command: |
+        Write-Host "🛑 Deteniendo aplicación anterior..." -ForegroundColor Yellow
+        Stop-Process -Name "java" -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 3
+        
+        Write-Host "🚀 Iniciando nueva versión..." -ForegroundColor Cyan
+        $jarFile = Get-ChildItem -Path "target" -Filter "negocios-*.jar" | Select-Object -First 1
+        
+        if ($jarFile) {
+          # Crear carpeta de logs si no existe
+          New-Item -ItemType Directory -Path "logs" -Force | Out-Null
+          
+          Start-Process -FilePath "java" `
+                       -ArgumentList "-jar", "target\$($jarFile.Name)" `
+                       -WindowStyle Hidden `
+                       -RedirectStandardOutput "logs\app.log" `
+                       -RedirectStandardError "logs\error.log"
+          
+          Write-Host "✅ Backend actualizado y ejecutándose" -ForegroundColor Green
+          Write-Host "📝 Logs en: logs\app.log" -ForegroundColor White
+        } else {
+          Write-Host "❌ Error: No se encontró el archivo JAR compilado" -ForegroundColor Red
+          exit 1
+        }
+      
+      # Ambiente de deployment
+      environment: 'production'
