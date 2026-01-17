@@ -95,14 +95,34 @@ public class SeguridadConfiguracion {
     /* ---------- Configuración CORS reutilizada por ambos chains ---------- */
     private CorsConfiguration corsConfig() {
         CorsConfiguration config = new CorsConfiguration();
+        
         // Permitir tanto localhost (desarrollo) como dominio público (producción)
         config.setAllowedOrigins(List.of(
             "http://localhost:3000",
             "https://app.rod-b-op.com"
         ));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+        
+        // Métodos HTTP permitidos
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        
+        // Headers permitidos (específicos para mejor seguridad)
+        config.setAllowedHeaders(List.of(
+            "Authorization",
+            "Content-Type",
+            "Accept",
+            "Origin",
+            "X-Requested-With"
+        ));
+        
+        // Headers expuestos al cliente
+        config.setExposedHeaders(List.of("Authorization"));
+        
+        // Permitir credentials (cookies, auth headers)
         config.setAllowCredentials(true);
+        
+        // Cache del preflight (OPTIONS) por 1 hora
+        config.setMaxAge(3600L);
+        
         return config;
     }
 
