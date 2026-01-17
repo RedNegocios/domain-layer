@@ -49,26 +49,54 @@ jobs:
           $javaExe = Get-Command java -ErrorAction Stop
           $env:JAVA_HOME = $javaExe.Source -replace '\\bin\\java.exe$', ''
           Write-Host "JAVA_HOME configurado: $env:JAVA_HOME" -ForegroundColor Green
+          
+          Write-Host "Ejecutando: mvnw.cmd clean package -DskipTests" -ForegroundColor Yellow
           cmd /c "mvnw.cmd clean package -DskipTests"
           if ($LASTEXITCODE -ne 0) { exit 1 }
+          
           Write-Host "Compilacion exitosa" -ForegroundColor Green
+          Write-Host "WAR generado:" -ForegroundColor Cyan
+          Get-ChildItem target\*.war | Select-Object Name, Length, LastWriteTime
         shell: powershell
 
-      - name: Reiniciar aplicación
+      - name: Desplegar WAR a Tomcat
         run: |
           cd C:\Projects\domain-layer
-          Write-Host "Deteniendo aplicacion anterior..." -ForegroundColor Yellow
-          Stop-Process -Name "java" -Force -ErrorAction SilentlyContinue
-          Start-Sleep -Seconds 3
-          Write-Host "Iniciando nueva version..." -ForegroundColor Cyan
-          $jarFile = Get-ChildItem -Path "target" -Filter "negocios-*.jar" | Select-Object -First 1
-          if ($jarFile) {
-            New-Item -ItemType Directory -Path "logs" -Force | Out-Null
-            Start-Process -FilePath "java" -ArgumentList "-jar", "target\$($jarFile.Name)" -WindowStyle Hidden -RedirectStandardOutput "logs\app.log" -RedirectStandardError "logs\error.log"
-            Write-Host "Backend actualizado y ejecutandose" -ForegroundColor Green
-            Write-Host "Logs en: logs\app.log" -ForegroundColor White
+          $tomcatWebapps = "C:\Projects\servers\red-negocios\tomcat10\apache-tomcat-10.1.34\webapps"
+          $warFile = "target\negocios.war"
+          
+          Write-Host "Copiando WAR a Tomcat..." -ForegroundColor Cyan
+          if (Test-Path $warFile) {
+            Copy-Item $warFile -Destination "$tomcatWebapps\negocios.war" -Force
+            Write-Host "WAR desplegado exitosamente en: $tomcatWebapps" -ForegroundColor Green
           } else {
-            Write-Host "Error: No se encontro el archivo JAR compilado" -ForegroundColor Red
+            Write-Host "Error: No se encontro el archivo WAR en $warFile" -ForegroundColor Red
+            exit 1
+          }
+        shell: powershell
+
+      - name: Reiniciar Tomcat
+        run: |
+          $tomcatBin = "C:\Projects\servers\red-negocios\tomcat10\apache-tomcat-10.1.34\bin"
+          
+          Write-Host "Reiniciando Tomcat..." -ForegroundColor Cyan
+          
+          Write-Host "Deteniendo Tomcat..." -ForegroundColor Yellow
+          if (Test-Path "$tomcatBin\shutdown.bat") {
+            Start-Process -FilePath "$tomcatBin\shutdown.bat" -Wait -NoNewWindow -ErrorAction SilentlyContinue
+          } else {
+            Stop-Process -Name "tomcat*" -Force -ErrorAction SilentlyContinue
+          }
+          
+          Start-Sleep -Seconds 5
+          
+          Write-Host "Iniciando Tomcat..." -ForegroundColor Green
+          if (Test-Path "$tomcatBin\startup.bat") {
+            Start-Process -FilePath "$tomcatBin\startup.bat" -NoNewWindow
+            Write-Host "Tomcat iniciado exitosamente" -ForegroundColor Green
+            Write-Host "Aplicacion disponible en: http://localhost:8080/negocios" -ForegroundColor Cyan
+          } else {
+            Write-Host "Error: No se encontro startup.bat en $tomcatBin" -ForegroundColor Red
             exit 1
           }
         shell: powershell
@@ -79,6 +107,9 @@ jobs:
           Write-Host "DEPLOYMENT COMPLETADO" -ForegroundColor Green
           Write-Host "================================" -ForegroundColor Cyan
           Write-Host "Proyecto: C:\Projects\domain-layer" -ForegroundColor White
+          Write-Host "WAR: negocios.war" -ForegroundColor White
+          Write-Host "Tomcat: C:\Projects\servers\red-negocios\tomcat10\apache-tomcat-10.1.34" -ForegroundColor White
+          Write-Host "URL: http://localhost:8080/negocios" -ForegroundColor White
           Write-Host "Ambiente: production" -ForegroundColor White
           Write-Host "Fecha: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor White
           Write-Host "Ejecutado por: ${{ github.actor }}" -ForegroundColor White
