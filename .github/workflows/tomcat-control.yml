@@ -74,10 +74,16 @@ jobs:
             # Iniciar Tomcat
             if (Test-Path "$tomcatBin\catalina.bat") {
               $env:CATALINA_HOME = $tomcatHome
-              # Ejecutar directamente sin Start-Process para evitar problemas de firma digital
-              Set-Location $tomcatBin
-              cmd /c "catalina.bat start"
-              Set-Location $tomcatHome
+              # Iniciar Tomcat como proceso independiente que sobrevive al workflow
+              $psi = New-Object System.Diagnostics.ProcessStartInfo
+              $psi.FileName = "cmd.exe"
+              $psi.Arguments = "/c `"cd /d `"$tomcatBin`" && catalina.bat start`""
+              $psi.UseShellExecute = $true
+              $psi.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
+              $psi.CreateNoWindow = $false
+              $process = [System.Diagnostics.Process]::Start($psi)
+              
+              Write-Host "Proceso de inicio lanzado" -ForegroundColor Green
               
               Write-Host "Esperando inicio de Tomcat (20 segundos)..." -ForegroundColor Yellow
               Start-Sleep -Seconds 20
