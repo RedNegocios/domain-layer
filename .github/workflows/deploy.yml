@@ -66,73 +66,25 @@ jobs:
           Get-ChildItem target\*.war | Select-Object Name, Length, LastWriteTime
         shell: powershell
 
-      - name: Desplegar WAR a Tomcat
+      - name: Verificar deployment
         run: |
           cd C:\Projects\domain-layer
           $tomcatWebapps = "C:\Projects\servers\red-negocios\tomcat10\apache-tomcat-10.1.34\webapps"
-          $warFile = "target\negocios.war"
           
-          Write-Host "Copiando WAR a Tomcat..." -ForegroundColor Cyan
-          if (Test-Path $warFile) {
-            Copy-Item $warFile -Destination "$tomcatWebapps\negocios.war" -Force
-            Write-Host "WAR desplegado exitosamente en: $tomcatWebapps" -ForegroundColor Green
+          Write-Host "Verificando WAR desplegado..." -ForegroundColor Cyan
+          if (Test-Path "$tomcatWebapps\negocios.war") {
+            $warInfo = Get-Item "$tomcatWebapps\negocios.war"
+            Write-Host "WAR desplegado exitosamente!" -ForegroundColor Green
+            Write-Host "  Ubicacion: $tomcatWebapps\negocios.war" -ForegroundColor Cyan
+            Write-Host "  Tamanio: $([math]::Round($warInfo.Length/1MB, 2)) MB" -ForegroundColor Cyan
+            Write-Host "  Ultima modificacion: $($warInfo.LastWriteTime)" -ForegroundColor Cyan
+            Write-Host ""
+            Write-Host "NOTA: Tomcat detectara automaticamente el nuevo WAR y lo redesplegar." -ForegroundColor Yellow
+            Write-Host "Si Tomcat esta corriendo, la aplicacion se actualizara en unos segundos." -ForegroundColor Yellow
+            Write-Host "URL: http://localhost:8080/negocios" -ForegroundColor Green
           } else {
-            Write-Host "Error: No se encontro el archivo WAR en $warFile" -ForegroundColor Red
-            exit 1
-          }
-        shell: powershell
-
-      - name: Reiniciar Tomcat
-        run: |
-          $tomcatHome = "C:\Projects\servers\red-negocios\tomcat10\apache-tomcat-10.1.34"
-          $tomcatBin = "$tomcatHome\bin"
-          
-          # Configurar CATALINA_HOME para que Tomcat funcione
-          $env:CATALINA_HOME = $tomcatHome
-          
-          Write-Host "Reiniciando Tomcat..." -ForegroundColor Cyan
-          Write-Host "CATALINA_HOME: $env:CATALINA_HOME" -ForegroundColor Yellow
-          
-          Write-Host "Deteniendo procesos de Tomcat..." -ForegroundColor Yellow
-          Stop-Process -Name "java" -Force -ErrorAction SilentlyContinue
-          Start-Sleep -Seconds 5
-          
-          Write-Host "Verificando WAR desplegado:" -ForegroundColor Cyan
-          if (Test-Path "$tomcatHome\webapps\negocios.war") {
-            $warInfo = Get-Item "$tomcatHome\webapps\negocios.war"
-            Write-Host "  WAR encontrado: $($warInfo.Name) ($($warInfo.Length) bytes)" -ForegroundColor Green
-          } else {
-            Write-Host "  ADVERTENCIA: WAR no encontrado en webapps" -ForegroundColor Yellow
-          }
-          
-          Write-Host "Iniciando Tomcat..." -ForegroundColor Green
-          if (Test-Path "$tomcatBin\catalina.bat") {
-            # Iniciar Tomcat como proceso independiente que sobrevive al workflow
-            $psi = New-Object System.Diagnostics.ProcessStartInfo
-            $psi.FileName = "cmd.exe"
-            $psi.Arguments = "/c `"cd /d `"$tomcatBin`" && catalina.bat start`""
-            $psi.UseShellExecute = $true
-            $psi.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
-            $psi.CreateNoWindow = $false
-            $process = [System.Diagnostics.Process]::Start($psi)
-            
-            Write-Host "Proceso de inicio lanzado" -ForegroundColor Green
-            Write-Host "Esperando que Tomcat inicie (15 segundos)..." -ForegroundColor Yellow
-            Start-Sleep -Seconds 15
-            
-            Write-Host "Verificando si Tomcat esta corriendo..." -ForegroundColor Cyan
-            $tomcatProcess = Get-Process -Name "java" -ErrorAction SilentlyContinue
-            if ($tomcatProcess) {
-              Write-Host "Tomcat esta corriendo (PID: $($tomcatProcess.Id))" -ForegroundColor Green
-              Write-Host "Aplicacion disponible en: http://localhost:8080/negocios" -ForegroundColor Cyan
-            } else {
-              Write-Host "ERROR: Tomcat no inicio correctamente" -ForegroundColor Red
-              Write-Host "Ultimas lineas del log de Tomcat:" -ForegroundColor Yellow
-              Get-Content "$tomcatHome\logs\catalina.*.log" -Tail 30 -ErrorAction SilentlyContinue
-              exit 1
-            }
-          } else {
-            Write-Host "Error: No se encontro catalina.bat en $tomcatBin" -ForegroundColor Red
+            Write-Host "ADVERTENCIA: El WAR no se copio a Tomcat webapps" -ForegroundColor Red
+            Write-Host "Revisa la configuracion del maven-antrun-plugin en pom.xml" -ForegroundColor Yellow
             exit 1
           }
         shell: powershell
@@ -144,10 +96,16 @@ jobs:
           Write-Host "================================" -ForegroundColor Cyan
           Write-Host "Proyecto: C:\Projects\domain-layer" -ForegroundColor White
           Write-Host "WAR: negocios.war" -ForegroundColor White
-          Write-Host "Tomcat: C:\Projects\servers\red-negocios\tomcat10\apache-tomcat-10.1.34" -ForegroundColor White
-          Write-Host "URL: http://localhost:8080/negocios" -ForegroundColor White
-          Write-Host "Ambiente: production" -ForegroundColor White
-          Write-Host "Fecha: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor White
-          Write-Host "Ejecutado por: ${{ github.actor }}" -ForegroundColor White
+          Write-Host "Copiado a: C:\Projects\servers\red-negocios\tomcat10\apache-tomcat-10.1.34\webapps\" -ForegroundColor White
+          Write-Host ""
+          Write-Host "PROXIMO PASO:" -ForegroundColor Yellow
+          Write-Host "Asegurate de que Tomcat este corriendo manualmente" -ForegroundColor Yellow
+          Write-Host "Tomcat redesplegar automaticamente la aplicacion" -ForegroundColor Yellow
+          Write-Host ""
+          Write-Host "Para iniciar Tomcat manualmente:" -ForegroundColor Cyan
+          Write-Host '  cd "C:\Projects\servers\red-negocios\tomcat10\apache-tomcat-10.1.34\bin"' -ForegroundColor White
+          Write-Host "  .\startup.bat" -ForegroundColor White
+          Write-Host ""
+          Write-Host "URL: http://localhost:8080/negocios" -ForegroundColor Green
           Write-Host "================================" -ForegroundColor Cyan
         shell: powershell
