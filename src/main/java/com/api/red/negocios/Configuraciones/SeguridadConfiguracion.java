@@ -95,7 +95,11 @@ public class SeguridadConfiguracion {
     /* ---------- Configuración CORS reutilizada por ambos chains ---------- */
     private CorsConfiguration corsConfig() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000"));
+        // Permitir tanto localhost (desarrollo) como dominio público (producción)
+        config.setAllowedOrigins(List.of(
+            "http://localhost:3000",
+            "https://app.rod-b-op.com"
+        ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
