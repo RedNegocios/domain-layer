@@ -84,13 +84,19 @@ jobs:
 
       - name: Reiniciar Tomcat
         run: |
-          $tomcatBin = "C:\Projects\servers\red-negocios\tomcat10\apache-tomcat-10.1.34\bin"
+          $tomcatHome = "C:\Projects\servers\red-negocios\tomcat10\apache-tomcat-10.1.34"
+          $tomcatBin = "$tomcatHome\bin"
+          
+          # Configurar CATALINA_HOME para que Tomcat funcione
+          $env:CATALINA_HOME = $tomcatHome
           
           Write-Host "Reiniciando Tomcat..." -ForegroundColor Cyan
+          Write-Host "CATALINA_HOME: $env:CATALINA_HOME" -ForegroundColor Yellow
           
           Write-Host "Deteniendo Tomcat..." -ForegroundColor Yellow
           if (Test-Path "$tomcatBin\shutdown.bat") {
-            Start-Process -FilePath "$tomcatBin\shutdown.bat" -Wait -NoNewWindow -ErrorAction SilentlyContinue
+            & "$tomcatBin\shutdown.bat"
+            Start-Sleep -Seconds 3
           } else {
             Stop-Process -Name "tomcat*" -Force -ErrorAction SilentlyContinue
           }
@@ -99,7 +105,8 @@ jobs:
           
           Write-Host "Iniciando Tomcat..." -ForegroundColor Green
           if (Test-Path "$tomcatBin\startup.bat") {
-            Start-Process -FilePath "$tomcatBin\startup.bat" -NoNewWindow
+            & "$tomcatBin\startup.bat"
+            Start-Sleep -Seconds 3
             Write-Host "Tomcat iniciado exitosamente" -ForegroundColor Green
             Write-Host "Aplicacion disponible en: http://localhost:8080/negocios" -ForegroundColor Cyan
           } else {
