@@ -46,12 +46,11 @@ jobs:
         run: |
           cd C:\Projects\domain-layer
           Write-Host "Compilando proyecto..." -ForegroundColor Cyan
-          $javaExe = Get-Command java -ErrorAction Stop
-          $env:JAVA_HOME = $javaExe.Source -replace '\\bin\\java.exe$', ''
-          Write-Host "JAVA_HOME configurado: $env:JAVA_HOME" -ForegroundColor Green
+          Write-Host "Java version en PATH:" -ForegroundColor Yellow
+          java -version
           
           Write-Host "Ejecutando: mvnw.cmd clean package -DskipTests" -ForegroundColor Yellow
-          cmd /c "mvnw.cmd clean package -DskipTests"
+          .\mvnw.cmd clean package -DskipTests
           if ($LASTEXITCODE -ne 0) { exit 1 }
           
           Write-Host "Compilacion exitosa" -ForegroundColor Green
