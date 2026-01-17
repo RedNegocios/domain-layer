@@ -46,8 +46,12 @@ jobs:
         run: |
           cd C:\Projects\domain-layer
           Write-Host "Compilando proyecto..." -ForegroundColor Cyan
-          Write-Host "Java version en PATH:" -ForegroundColor Yellow
-          java -version
+          
+          Write-Host "JAVA_HOME del sistema: $env:JAVA_HOME" -ForegroundColor Yellow
+          if ($env:JAVA_HOME) {
+            Write-Host "Version de Java en JAVA_HOME:" -ForegroundColor Yellow
+            & "$env:JAVA_HOME\bin\java.exe" -version
+          }
           
           Write-Host "Ejecutando: mvnw.cmd clean package -DskipTests" -ForegroundColor Yellow
           .\mvnw.cmd clean package -DskipTests
