@@ -74,7 +74,10 @@ jobs:
             # Iniciar Tomcat
             if (Test-Path "$tomcatBin\catalina.bat") {
               $env:CATALINA_HOME = $tomcatHome
-              Start-Process -FilePath "$tomcatBin\catalina.bat" -ArgumentList "start" -WorkingDirectory $tomcatHome
+              # Ejecutar directamente sin Start-Process para evitar problemas de firma digital
+              Set-Location $tomcatBin
+              cmd /c "catalina.bat start"
+              Set-Location $tomcatHome
               
               Write-Host "Esperando inicio de Tomcat (20 segundos)..." -ForegroundColor Yellow
               Start-Sleep -Seconds 20

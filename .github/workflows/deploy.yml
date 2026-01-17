@@ -107,7 +107,11 @@ jobs:
           
           Write-Host "Iniciando Tomcat..." -ForegroundColor Green
           if (Test-Path "$tomcatBin\catalina.bat") {
-            Start-Process -FilePath "$tomcatBin\catalina.bat" -ArgumentList "start" -WorkingDirectory $tomcatHome
+            # Ejecutar directamente sin Start-Process para evitar problemas de firma digital
+            Set-Location $tomcatBin
+            cmd /c "catalina.bat start"
+            Set-Location $tomcatHome
+            
             Write-Host "Esperando que Tomcat inicie (15 segundos)..." -ForegroundColor Yellow
             Start-Sleep -Seconds 15
             
