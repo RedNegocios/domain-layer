@@ -72,6 +72,9 @@ public class SeguridadConfiguracion {
 
             /* ---------- Autorización ---------- */
             .authorizeHttpRequests(auth -> auth
+                // Permitir peticiones OPTIONS sin autenticación (CORS preflight)
+                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                // Permitir registro y login sin autenticación
                 .requestMatchers("/api/registro/**", "/api/login/**").permitAll()
                 .anyRequest().permitAll()          // (igual que tenías)
             )
