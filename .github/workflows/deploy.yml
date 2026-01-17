@@ -48,10 +48,13 @@ jobs:
           Write-Host "Compilando proyecto..." -ForegroundColor Cyan
           
           Write-Host "JAVA_HOME del sistema: $env:JAVA_HOME" -ForegroundColor Yellow
-          if ($env:JAVA_HOME) {
-            Write-Host "Version de Java en JAVA_HOME:" -ForegroundColor Yellow
-            & "$env:JAVA_HOME\bin\java.exe" -version
-          }
+          
+          # JAVA_HOME ya incluye \bin, entonces quitarlo si existe
+          $javaHomeBase = $env:JAVA_HOME -replace '\\bin$', ''
+          
+          Write-Host "Java base path: $javaHomeBase" -ForegroundColor Cyan
+          Write-Host "Version de Java:" -ForegroundColor Yellow
+          & "$javaHomeBase\bin\java.exe" -version
           
           Write-Host "Ejecutando: mvnw.cmd clean package -DskipTests" -ForegroundColor Yellow
           .\mvnw.cmd clean package -DskipTests
