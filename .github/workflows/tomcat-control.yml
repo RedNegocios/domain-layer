@@ -1,0 +1,152 @@
+name: Control Tomcat
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Accion a ejecutar'
+        required: true
+        type: choice
+        options:
+          - start
+          - stop
+          - restart
+          - status
+        default: 'restart'
+
+jobs:
+  control-tomcat:
+    name: Controlar Tomcat Server
+    runs-on: self-hosted
+    environment: production
+    
+    steps:
+      - name: Ejecutar accion en Tomcat
+        run: |
+          $tomcatHome = "C:\Projects\servers\red-negocios\tomcat10\apache-tomcat-10.1.34"
+          $tomcatBin = "$tomcatHome\bin"
+          $env:CATALINA_HOME = $tomcatHome
+          
+          $action = "${{ github.event.inputs.action }}"
+          
+          Write-Host "================================" -ForegroundColor Cyan
+          Write-Host "CONTROL DE TOMCAT - Accion: $action" -ForegroundColor Cyan
+          Write-Host "================================" -ForegroundColor Cyan
+          Write-Host ""
+          
+          function Get-TomcatStatus {
+            Write-Host "Verificando estado de Tomcat..." -ForegroundColor Yellow
+            $tomcatProcess = Get-Process -Name "java" -ErrorAction SilentlyContinue
+            if ($tomcatProcess) {
+              Write-Host "Tomcat CORRIENDO (PID: $($tomcatProcess.Id))" -ForegroundColor Green
+              Write-Host "Memoria: $([math]::Round($tomcatProcess.WorkingSet64/1MB, 2)) MB" -ForegroundColor Cyan
+              return $true
+            } else {
+              Write-Host "Tomcat NO esta corriendo" -ForegroundColor Red
+              return $false
+            }
+          }
+          
+          function Stop-Tomcat {
+            Write-Host "Deteniendo Tomcat..." -ForegroundColor Yellow
+            $running = Get-TomcatStatus
+            if ($running) {
+              Stop-Process -Name "java" -Force -ErrorAction SilentlyContinue
+              Start-Sleep -Seconds 3
+              Write-Host "Tomcat detenido" -ForegroundColor Green
+            } else {
+              Write-Host "Tomcat ya estaba detenido" -ForegroundColor Yellow
+            }
+          }
+          
+          function Start-Tomcat {
+            Write-Host "Iniciando Tomcat..." -ForegroundColor Yellow
+            
+            # Verificar que el WAR existe
+            if (Test-Path "$tomcatHome\webapps\negocios.war") {
+              $warInfo = Get-Item "$tomcatHome\webapps\negocios.war"
+              Write-Host "WAR encontrado: $($warInfo.Name) ($([math]::Round($warInfo.Length/1MB, 2)) MB)" -ForegroundColor Green
+              Write-Host "Ultima modificacion: $($warInfo.LastWriteTime)" -ForegroundColor Cyan
+            } else {
+              Write-Host "ADVERTENCIA: negocios.war no encontrado en webapps!" -ForegroundColor Red
+            }
+            
+            # Iniciar Tomcat
+            if (Test-Path "$tomcatBin\catalina.bat") {
+              $env:CATALINA_HOME = $tomcatHome
+              Start-Process -FilePath "$tomcatBin\catalina.bat" -ArgumentList "start" -WorkingDirectory $tomcatHome
+              
+              Write-Host "Esperando inicio de Tomcat (20 segundos)..." -ForegroundColor Yellow
+              Start-Sleep -Seconds 20
+              
+              # Verificar si inicio
+              $started = Get-TomcatStatus
+              if ($started) {
+                Write-Host ""
+                Write-Host "Tomcat iniciado exitosamente!" -ForegroundColor Green
+                Write-Host "URL: http://localhost:8080/negocios" -ForegroundColor Cyan
+                Write-Host ""
+                
+                # Mostrar ultimas lineas del log
+                Write-Host "Ultimas lineas del log de inicio:" -ForegroundColor Yellow
+                $latestLog = Get-ChildItem "$tomcatHome\logs\catalina.*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+                if ($latestLog) {
+                  Get-Content $latestLog.FullName -Tail 15
+                }
+              } else {
+                Write-Host ""
+                Write-Host "ERROR: Tomcat no inicio correctamente" -ForegroundColor Red
+                Write-Host ""
+                Write-Host "Revisando logs de error..." -ForegroundColor Yellow
+                $latestLog = Get-ChildItem "$tomcatHome\logs\catalina.*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+                if ($latestLog) {
+                  Write-Host "Log: $($latestLog.Name)" -ForegroundColor Cyan
+                  Get-Content $latestLog.FullName -Tail 50
+                }
+                exit 1
+              }
+            } else {
+              Write-Host "ERROR: No se encontro catalina.bat en $tomcatBin" -ForegroundColor Red
+              exit 1
+            }
+          }
+          
+          # Ejecutar accion
+          switch ($action) {
+            "start" {
+              $running = Get-TomcatStatus
+              if ($running) {
+                Write-Host "Tomcat ya esta corriendo. Use 'restart' para reiniciar." -ForegroundColor Yellow
+              } else {
+                Start-Tomcat
+              }
+            }
+            "stop" {
+              Stop-Tomcat
+            }
+            "restart" {
+              Stop-Tomcat
+              Write-Host ""
+              Start-Sleep -Seconds 2
+              Start-Tomcat
+            }
+            "status" {
+              Get-TomcatStatus
+              Write-Host ""
+              Write-Host "Archivos en webapps:" -ForegroundColor Cyan
+              Get-ChildItem "$tomcatHome\webapps" -Filter "*.war" | ForEach-Object {
+                Write-Host "  $($_.Name) - $([math]::Round($_.Length/1MB, 2)) MB - $($_.LastWriteTime)" -ForegroundColor White
+              }
+              Write-Host ""
+              Write-Host "Logs recientes:" -ForegroundColor Cyan
+              Get-ChildItem "$tomcatHome\logs\catalina.*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 3 | ForEach-Object {
+                Write-Host "  $($_.Name) - $($_.LastWriteTime)" -ForegroundColor White
+              }
+            }
+          }
+          
+          Write-Host ""
+          Write-Host "================================" -ForegroundColor Cyan
+          Write-Host "Accion '$action' completada" -ForegroundColor Green
+          Write-Host "================================" -ForegroundColor Cyan
+        shell: powershell
