@@ -47,14 +47,15 @@ jobs:
           cd C:\Projects\domain-layer
           Write-Host "Compilando proyecto..." -ForegroundColor Cyan
           
-          Write-Host "JAVA_HOME del sistema: $env:JAVA_HOME" -ForegroundColor Yellow
+          Write-Host "JAVA_HOME original: $env:JAVA_HOME" -ForegroundColor Yellow
           
-          # JAVA_HOME ya incluye \bin, entonces quitarlo si existe
+          # JAVA_HOME debe apuntar a la raiz de Java (sin \bin) para que mvnw funcione
           $javaHomeBase = $env:JAVA_HOME -replace '\\bin$', ''
+          $env:JAVA_HOME = $javaHomeBase
           
-          Write-Host "Java base path: $javaHomeBase" -ForegroundColor Cyan
+          Write-Host "JAVA_HOME corregido: $env:JAVA_HOME" -ForegroundColor Green
           Write-Host "Version de Java:" -ForegroundColor Yellow
-          & "$javaHomeBase\bin\java.exe" -version
+          & "$env:JAVA_HOME\bin\java.exe" -version
           
           Write-Host "Ejecutando: mvnw.cmd clean package -DskipTests" -ForegroundColor Yellow
           .\mvnw.cmd clean package -DskipTests
