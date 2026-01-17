@@ -93,24 +93,37 @@ jobs:
           Write-Host "Reiniciando Tomcat..." -ForegroundColor Cyan
           Write-Host "CATALINA_HOME: $env:CATALINA_HOME" -ForegroundColor Yellow
           
-          Write-Host "Deteniendo Tomcat..." -ForegroundColor Yellow
-          if (Test-Path "$tomcatBin\shutdown.bat") {
-            & "$tomcatBin\shutdown.bat"
-            Start-Sleep -Seconds 3
-          } else {
-            Stop-Process -Name "tomcat*" -Force -ErrorAction SilentlyContinue
-          }
-          
+          Write-Host "Deteniendo procesos de Tomcat..." -ForegroundColor Yellow
+          Stop-Process -Name "java" -Force -ErrorAction SilentlyContinue
           Start-Sleep -Seconds 5
           
-          Write-Host "Iniciando Tomcat..." -ForegroundColor Green
-          if (Test-Path "$tomcatBin\startup.bat") {
-            & "$tomcatBin\startup.bat"
-            Start-Sleep -Seconds 3
-            Write-Host "Tomcat iniciado exitosamente" -ForegroundColor Green
-            Write-Host "Aplicacion disponible en: http://localhost:8080/negocios" -ForegroundColor Cyan
+          Write-Host "Verificando WAR desplegado:" -ForegroundColor Cyan
+          if (Test-Path "$tomcatHome\webapps\negocios.war") {
+            $warInfo = Get-Item "$tomcatHome\webapps\negocios.war"
+            Write-Host "  WAR encontrado: $($warInfo.Name) ($($warInfo.Length) bytes)" -ForegroundColor Green
           } else {
-            Write-Host "Error: No se encontro startup.bat en $tomcatBin" -ForegroundColor Red
+            Write-Host "  ADVERTENCIA: WAR no encontrado en webapps" -ForegroundColor Yellow
+          }
+          
+          Write-Host "Iniciando Tomcat..." -ForegroundColor Green
+          if (Test-Path "$tomcatBin\catalina.bat") {
+            Start-Process -FilePath "$tomcatBin\catalina.bat" -ArgumentList "start" -WorkingDirectory $tomcatHome
+            Write-Host "Esperando que Tomcat inicie (15 segundos)..." -ForegroundColor Yellow
+            Start-Sleep -Seconds 15
+            
+            Write-Host "Verificando si Tomcat esta corriendo..." -ForegroundColor Cyan
+            $tomcatProcess = Get-Process -Name "java" -ErrorAction SilentlyContinue
+            if ($tomcatProcess) {
+              Write-Host "Tomcat esta corriendo (PID: $($tomcatProcess.Id))" -ForegroundColor Green
+              Write-Host "Aplicacion disponible en: http://localhost:8080/negocios" -ForegroundColor Cyan
+            } else {
+              Write-Host "ERROR: Tomcat no inicio correctamente" -ForegroundColor Red
+              Write-Host "Ultimas lineas del log de Tomcat:" -ForegroundColor Yellow
+              Get-Content "$tomcatHome\logs\catalina.*.log" -Tail 30 -ErrorAction SilentlyContinue
+              exit 1
+            }
+          } else {
+            Write-Host "Error: No se encontro catalina.bat en $tomcatBin" -ForegroundColor Red
             exit 1
           }
         shell: powershell
