@@ -24,13 +24,22 @@ jobs:
       - name: Pull latest changes
         run: |
           cd C:\Projects\domain-layer
-          Write-Host "Descargando cambios desde GitHub..." -ForegroundColor Cyan
+          Write-Host "Verificando remoto configurado:" -ForegroundColor Cyan
           git remote -v
-          git fetch --all
-          git reset --hard origin/main
-          Write-Host "Codigo actualizado desde GitHub" -ForegroundColor Green
-          Write-Host "Commit actual:"
+          Write-Host "" 
+          Write-Host "Commit ANTES del pull:" -ForegroundColor Yellow
           git log --oneline -1
+          Write-Host ""
+          Write-Host "Descargando cambios desde GitHub..." -ForegroundColor Cyan
+          git fetch --all --prune
+          git reset --hard origin/main
+          git clean -fd
+          Write-Host ""
+          Write-Host "Commit DESPUES del pull:" -ForegroundColor Green
+          git log --oneline -1
+          Write-Host ""
+          Write-Host "Verificando archivos corregidos:" -ForegroundColor Cyan
+          git show HEAD:src/main/java/com/api/red/negocios/Repositorios/IngresoRepositorio.java | Select-String -Pattern "Agregado diario" -Context 0,2
         shell: powershell
 
       - name: Ejecutar build
