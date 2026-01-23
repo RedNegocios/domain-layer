@@ -76,6 +76,8 @@ public class SeguridadConfiguracion {
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 // Permitir registro y login sin autenticación
                 .requestMatchers("/api/registro/**", "/api/login/**").permitAll()
+                // Permitir acceso sin autenticación al endpoint de colecciones
+                .requestMatchers("/api/colecciones/**", "/api/productos/**").permitAll()
                 .anyRequest().permitAll()          // (igual que tenías)
             )
 

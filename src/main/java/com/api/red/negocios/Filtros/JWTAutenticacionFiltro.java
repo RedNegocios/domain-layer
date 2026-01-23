@@ -52,7 +52,8 @@ public class JWTAutenticacionFiltro extends GenericFilterBean {
             return;
         }
 
-        if (requestURI.contains("/api/login") || requestURI.contains("/error") || requestURI.contains("/api/registro")) {
+        if (requestURI.contains("/api/login") || requestURI.contains("/error") || requestURI.contains("/api/registro")
+            || requestURI.contains("/api/colecciones") || requestURI.contains("/api/productos")) {
             logger.info("al menos bypasa el jwt filter");
             chain.doFilter(request, response);
             return;
