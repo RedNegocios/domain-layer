@@ -41,13 +41,18 @@ public class ProductoControlador {
     }
 
 
-    // Actualizar un producto
+    // Actualizar un producto (libro)
     @PutMapping("/{id}")
     public ResponseEntity<Producto> actualizarProducto(@PathVariable Integer id, @RequestBody Producto productoActualizado) {
         return productoRepositorio.findById(id).map(producto -> {
-            producto.setNombre(productoActualizado.getNombre());
+            producto.setTitulo(productoActualizado.getTitulo());
+            producto.setAutor(productoActualizado.getAutor());
+            producto.setIsbn(productoActualizado.getIsbn());
+            producto.setAño(productoActualizado.getAño());
+            producto.setEditorial(productoActualizado.getEditorial());
             producto.setDescripcion(productoActualizado.getDescripcion());
             producto.setPrecio(productoActualizado.getPrecio());
+            producto.setColeccion(productoActualizado.getColeccion());
             producto.setModificadoPor(productoActualizado.getModificadoPor());
             producto.setFechaModificacion(productoActualizado.getFechaModificacion());
             producto.setActivo(productoActualizado.getActivo());
