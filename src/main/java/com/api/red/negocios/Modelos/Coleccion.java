@@ -7,12 +7,9 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Data
@@ -24,26 +21,13 @@ public class Coleccion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer coleccionId;
 
-    @ManyToOne
-    @JoinColumn(name = "productoId", nullable = false, foreignKey = @ForeignKey(name = "FK_Colecciones_Producto"))
-    private Producto producto;
-
-    private String titulo;
-
-    private String autor;
+    // Género/Categoría semántica (Novela, Enciclopedia, Libro Técnico, etc.)
+    private String nombre;
 
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
-    private String isbn;
-
-    private Integer año;
-
-    private String editorial;
-
-    private String imagenUrl;
-
-    private String tipoColeccion;
+    private String icono;
 
     @Column(updatable = false)
     private LocalDateTime fechaCreacion = LocalDateTime.now();

@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -24,12 +25,28 @@ public class Producto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer productoId;
 
-    private String nombre;
+    // Campos de libro
+    private String titulo;
+
+    private String autor;
+
+    private String isbn;
+
+    private Integer año;
+
+    private String editorial;
 
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
+    private String imagenUrl;
+
     private BigDecimal precio;
+
+    // Relación con Colecciones (género/categoría)
+    @ManyToOne
+    @JoinColumn(name = "coleccionId", nullable = false, foreignKey = @ForeignKey(name = "FK_Producto_Colecciones"))
+    private Coleccion coleccion;
 
     @Column(updatable = false)
     private LocalDateTime fechaCreacion = LocalDateTime.now();

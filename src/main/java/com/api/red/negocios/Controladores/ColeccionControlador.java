@@ -17,13 +17,13 @@ public class ColeccionControlador {
     @Autowired
     private ColeccionRepositorio coleccionRepositorio;
 
-    // Obtener todas las colecciones (sin autenticación requerida)
+    // Obtener todos los géneros/colecciones (sin autenticación)
     @GetMapping
     public List<Coleccion> obtenerTodasLasColecciones() {
         return coleccionRepositorio.findAll();
     }
 
-    // Obtener una colección por ID
+    // Obtener un género por ID
     @GetMapping("/{id}")
     public ResponseEntity<Coleccion> obtenerColeccionPorId(@PathVariable Integer id) {
         return coleccionRepositorio.findById(id)
@@ -31,7 +31,7 @@ public class ColeccionControlador {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Crear una nueva colección
+    // Crear un nuevo género/colección
     @PostMapping
     public Coleccion crearColeccion(@RequestBody Coleccion coleccion) {
         coleccion.setFechaCreacion(LocalDateTime.now());
@@ -40,18 +40,13 @@ public class ColeccionControlador {
         return coleccionRepositorio.save(coleccion);
     }
 
-    // Actualizar una colección
+    // Actualizar un género/colección
     @PutMapping("/{id}")
     public ResponseEntity<Coleccion> actualizarColeccion(@PathVariable Integer id, @RequestBody Coleccion coleccionActualizada) {
         return coleccionRepositorio.findById(id).map(coleccion -> {
-            coleccion.setTitulo(coleccionActualizada.getTitulo());
-            coleccion.setAutor(coleccionActualizada.getAutor());
+            coleccion.setNombre(coleccionActualizada.getNombre());
             coleccion.setDescripcion(coleccionActualizada.getDescripcion());
-            coleccion.setIsbn(coleccionActualizada.getIsbn());
-            coleccion.setAño(coleccionActualizada.getAño());
-            coleccion.setEditorial(coleccionActualizada.getEditorial());
-            coleccion.setImagenUrl(coleccionActualizada.getImagenUrl());
-            coleccion.setTipoColeccion(coleccionActualizada.getTipoColeccion());
+            coleccion.setIcono(coleccionActualizada.getIcono());
             coleccion.setModificadoPor(coleccionActualizada.getModificadoPor());
             coleccion.setFechaModificacion(LocalDateTime.now());
             coleccion.setActivo(coleccionActualizada.getActivo());
@@ -59,7 +54,7 @@ public class ColeccionControlador {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    // Eliminar una colección (eliminación lógica)
+    // Eliminar un género/colección (eliminación lógica)
     @DeleteMapping("/{id}")
     public ResponseEntity<Object> eliminarColeccion(@PathVariable Integer id) {
         return coleccionRepositorio.findById(id).map(coleccion -> {
